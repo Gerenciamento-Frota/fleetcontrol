@@ -1,0 +1,2441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FleetControl — Conquista Empreendimentos</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/tabler-icons.min.css">
+<style>
+/* ============================================================
+   RESET & VARIABLES
+   ============================================================ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0f1117;
+  --bg2: #181b24;
+  --bg3: #1e2230;
+  --bg4: #252a3a;
+  --border: #2a2f42;
+  --border2: #333a52;
+  --text: #e8ecf4;
+  --text2: #9aa0b8;
+  --text3: #5c6480;
+  --accent: #4f7cff;
+  --accent2: #3d63d4;
+  --accent-bg: rgba(79,124,255,0.12);
+  --green: #22c55e;
+  --green-bg: rgba(34,197,94,0.12);
+  --yellow: #f59e0b;
+  --yellow-bg: rgba(245,158,11,0.12);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.12);
+  --purple: #a855f7;
+  --purple-bg: rgba(168,85,247,0.12);
+  --font: 'DM Sans', 'Segoe UI', sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --radius: 8px;
+  --radius2: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+body { font-family: var(--font); background: var(--bg); color: var(--text); font-size: 13px; line-height: 1.5; min-height: 100vh; }
+
+/* ============================================================
+   LOGIN
+   ============================================================ */
+#login-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; background: var(--bg);
+  background-image: radial-gradient(ellipse at 20% 50%, rgba(79,124,255,0.08) 0%, transparent 60%),
+                    radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.06) 0%, transparent 50%);
+}
+.login-box {
+  width: 380px; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius2); padding: 40px; box-shadow: var(--shadow);
+}
+.login-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; }
+.login-logo-icon {
+  width: 42px; height: 42px; background: var(--accent); border-radius: var(--radius);
+  display: flex; align-items: center; justify-content: center; font-size: 20px; color: #fff;
+}
+.login-logo-text { font-size: 18px; font-weight: 600; color: var(--text); }
+.login-logo-sub { font-size: 11px; color: var(--text3); }
+.login-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; }
+.login-sub { font-size: 12px; color: var(--text2); margin-bottom: 24px; }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 11px; color: var(--text2); margin-bottom: 5px; display: block; }
+.form-input {
+  width: 100%; padding: 9px 12px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); font-size: 13px; outline: none;
+  transition: border-color 0.15s;
+}
+.form-input:focus { border-color: var(--accent); }
+.btn-login {
+  width: 100%; padding: 10px; background: var(--accent); border: none; border-radius: var(--radius);
+  color: #fff; font-size: 13px; font-weight: 500; cursor: pointer; margin-top: 8px;
+  transition: background 0.15s;
+}
+.btn-login:hover { background: var(--accent2); }
+.login-note { font-size: 11px; color: var(--text3); text-align: center; margin-top: 16px; }
+
+/* ============================================================
+   APP LAYOUT
+   ============================================================ */
+#app { display: none; height: 100vh; overflow: hidden; }
+.layout { display: flex; height: 100vh; }
+
+/* SIDEBAR */
+.sidebar {
+  width: 220px; min-width: 220px; background: var(--bg2); border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; overflow-y: auto; overflow-x: hidden;
+}
+.sidebar-logo {
+  padding: 16px 14px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.sidebar-logo-icon {
+  width: 34px; height: 34px; background: var(--accent); border-radius: 8px;
+  display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; flex-shrink: 0;
+}
+.sidebar-logo-name { font-size: 13px; font-weight: 600; }
+.sidebar-logo-sub { font-size: 10px; color: var(--text3); }
+.sidebar-user {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.user-avatar {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--accent-bg);
+  border: 1px solid var(--accent); display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 600; color: var(--accent); flex-shrink: 0;
+}
+.user-info { min-width: 0; }
+.user-name { font-size: 11px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-role { font-size: 10px; color: var(--text3); }
+.sidebar-nav { flex: 1; padding: 8px 0; }
+.nav-section {
+  font-size: 9px; font-weight: 600; color: var(--text3); letter-spacing: .08em;
+  text-transform: uppercase; padding: 10px 14px 4px;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 9px; padding: 8px 14px;
+  cursor: pointer; color: var(--text2); font-size: 12px; border-radius: 0;
+  transition: all 0.12s; position: relative;
+}
+.nav-item:hover { background: var(--bg3); color: var(--text); }
+.nav-item.active {
+  background: var(--accent-bg); color: var(--accent);
+  border-left: 2px solid var(--accent); padding-left: 12px;
+}
+.nav-item i { font-size: 15px; flex-shrink: 0; }
+.nav-badge {
+  margin-left: auto; background: var(--red); color: #fff;
+  font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 10px;
+}
+.sidebar-footer {
+  padding: 12px 14px; border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.logout-btn {
+  display: flex; align-items: center; gap: 8px; color: var(--text3);
+  font-size: 12px; cursor: pointer; padding: 6px 0;
+}
+.logout-btn:hover { color: var(--red); }
+
+/* MAIN */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar {
+  height: 52px; min-height: 52px; background: var(--bg2); border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; padding: 0 20px; gap: 12px;
+}
+.topbar-title { font-size: 14px; font-weight: 500; flex: 1; }
+.topbar-period {
+  display: flex; align-items: center; gap: 6px; background: var(--bg3);
+  border: 1px solid var(--border); border-radius: var(--radius); padding: 5px 10px;
+  font-size: 11px; cursor: pointer;
+}
+.topbar-period-main { font-weight: 500; }
+.topbar-period-dates { color: var(--text3); font-family: var(--mono); font-size: 10px; }
+.content { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* ============================================================
+   COMPONENTS
+   ============================================================ */
+.page { display: none; flex-direction: column; gap: 16px; }
+.page.active { display: flex; }
+
+/* Cards */
+.card {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: var(--radius2); padding: 16px;
+}
+.card-sm { padding: 12px 14px; }
+.card-title {
+  font-size: 12px; font-weight: 500; color: var(--text2);
+  text-transform: uppercase; letter-spacing: .05em; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 6px;
+}
+.card-title i { font-size: 14px; }
+
+/* Metrics */
+.metrics { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px; }
+.metric { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); padding: 14px 16px; }
+.metric-label { font-size: 11px; color: var(--text3); margin-bottom: 6px; }
+.metric-value { font-size: 22px; font-weight: 600; color: var(--text); line-height: 1; }
+.metric-sub { font-size: 11px; color: var(--text3); margin-top: 4px; }
+.metric-up { color: var(--green); }
+.metric-dn { color: var(--red); }
+
+/* Grid layouts */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.g4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; }
+
+/* Badges */
+.badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 500; padding: 2px 8px; border-radius: 20px;
+  white-space: nowrap;
+}
+.badge-blue { background: var(--accent-bg); color: var(--accent); }
+.badge-green { background: var(--green-bg); color: var(--green); }
+.badge-yellow { background: var(--yellow-bg); color: var(--yellow); }
+.badge-red { background: var(--red-bg); color: var(--red); }
+.badge-gray { background: var(--bg4); color: var(--text2); }
+.badge-purple { background: var(--purple-bg); color: var(--purple); }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 11px; }
+thead th {
+  text-align: left; color: var(--text3); font-weight: 500; font-size: 10px;
+  text-transform: uppercase; letter-spacing: .05em;
+  padding: 8px 10px 8px 0; border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+tbody td {
+  padding: 9px 10px 9px 0; border-bottom: 1px solid var(--border);
+  color: var(--text); vertical-align: middle;
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--bg3); }
+.tr-total td { font-weight: 600; background: var(--bg3); padding: 10px 10px 10px 0; }
+.tr-sep td {
+  padding: 4px 0; background: var(--bg3);
+  font-size: 10px; color: var(--text3); font-family: var(--mono);
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px; border-radius: var(--radius); border: 1px solid var(--border);
+  background: transparent; color: var(--text2); font-size: 12px; cursor: pointer;
+  transition: all 0.12s; white-space: nowrap;
+}
+.btn:hover { background: var(--bg3); color: var(--text); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn-primary:hover { background: var(--accent2); border-color: var(--accent2); }
+.btn-sm { padding: 4px 9px; font-size: 11px; }
+.btn-icon {
+  width: 28px; height: 28px; padding: 0; display: inline-flex;
+  align-items: center; justify-content: center; border-radius: var(--radius);
+  border: 1px solid var(--border); background: transparent; color: var(--text3); cursor: pointer;
+  font-size: 13px;
+}
+.btn-icon:hover { background: var(--bg3); color: var(--text); }
+
+/* Form */
+.form-row { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
+.form-row label { font-size: 11px; color: var(--text2); }
+.form-row input, .form-row select, .form-row textarea {
+  padding: 8px 10px; background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--radius); color: var(--text); font-size: 12px; outline: none;
+  transition: border-color 0.15s; width: 100%;
+}
+.form-row input:focus, .form-row select:focus, .form-row textarea:focus { border-color: var(--accent); }
+.form-row textarea { min-height: 70px; resize: vertical; }
+select option { background: var(--bg3); }
+
+/* Row layouts */
+.flex-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.flex-1 { flex: 1; }
+
+/* Alert / info box */
+.info-box {
+  background: var(--accent-bg); border: 1px solid rgba(79,124,255,0.25);
+  border-radius: var(--radius); padding: 10px 12px; font-size: 11px; color: var(--accent);
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.warn-box {
+  background: var(--yellow-bg); border: 1px solid rgba(245,158,11,0.25);
+  border-radius: var(--radius); padding: 10px 12px; font-size: 11px; color: var(--yellow);
+  display: flex; gap: 8px; align-items: flex-start;
+}
+.danger-box {
+  background: var(--red-bg); border: 1px solid rgba(239,68,68,0.25);
+  border-radius: var(--radius); padding: 10px 12px; font-size: 11px; color: var(--red);
+  display: flex; gap: 8px; align-items: flex-start;
+}
+
+/* Progress bar */
+.prog-wrap { height: 5px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.prog-fill { height: 100%; border-radius: 3px; }
+
+/* Divider */
+.divider { border-top: 1px solid var(--border); margin: 10px 0; }
+
+/* List item card */
+.list-card {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2);
+  padding: 12px 14px; display: flex; align-items: center; gap: 12px;
+  cursor: pointer; transition: border-color 0.12s;
+}
+.list-card:hover { border-color: var(--border2); }
+.list-card.selected { border-color: var(--accent); background: var(--accent-bg); }
+.list-card-icon {
+  width: 36px; height: 36px; border-radius: var(--radius); display: flex;
+  align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;
+}
+.list-card-info { flex: 1; min-width: 0; }
+.list-card-name { font-size: 12px; font-weight: 500; }
+.list-card-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.list-card-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+
+/* Detail panel */
+.detail-panel {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2);
+  padding: 16px; display: flex; flex-direction: column; gap: 14px;
+}
+.detail-header { display: flex; align-items: center; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.detail-icon {
+  width: 44px; height: 44px; border-radius: var(--radius); display: flex;
+  align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0;
+}
+.detail-name { font-size: 14px; font-weight: 600; }
+.detail-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+.detail-section { display: flex; flex-direction: column; gap: 6px; }
+.detail-section-title {
+  font-size: 10px; font-weight: 600; color: var(--text3);
+  text-transform: uppercase; letter-spacing: .06em; margin-bottom: 4px;
+}
+.field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.field-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.field { display: flex; flex-direction: column; gap: 2px; }
+.field-label { font-size: 10px; color: var(--text3); }
+.field-value { font-size: 12px; font-weight: 500; color: var(--text); }
+.field-value.accent { color: var(--accent); }
+.field-value.danger { color: var(--red); }
+.field-value.warn { color: var(--yellow); }
+.field-value.success { color: var(--green); }
+.mono { font-family: var(--mono); }
+
+/* Doc row */
+.doc-row {
+  display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--bg3); border-radius: var(--radius); cursor: pointer; font-size: 11px;
+}
+.doc-row:hover { background: var(--bg4); }
+.doc-add { border: 1px dashed var(--border2); background: transparent; color: var(--text3); }
+.doc-add:hover { background: var(--bg3); color: var(--text2); }
+
+/* Tab bar */
+.tab-bar { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+.tab-item {
+  padding: 8px 16px; cursor: pointer; font-size: 12px; color: var(--text3);
+  border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.12s;
+}
+.tab-item:hover { color: var(--text2); }
+.tab-item.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+
+/* Tree (planilha orç.) */
+.tree-etapa { margin-bottom: 6px; }
+.tree-etapa-hdr {
+  display: flex; align-items: center; gap: 8px; padding: 9px 12px;
+  background: var(--bg3); border-radius: var(--radius); cursor: pointer; font-size: 12px;
+}
+.tree-etapa-hdr:hover { background: var(--bg4); }
+.tree-cod { font-family: var(--mono); font-size: 11px; color: var(--accent); min-width: 28px; }
+.tree-name { flex: 1; font-weight: 500; }
+.tree-body { padding-left: 16px; margin-top: 4px; }
+.tree-sub { margin-bottom: 5px; }
+.tree-sub-hdr {
+  display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+  border-left: 2px solid var(--border2); cursor: pointer; font-size: 11px;
+}
+.tree-sub-hdr:hover { background: var(--bg3); border-radius: 0 var(--radius) var(--radius) 0; }
+.tree-sub-cod { font-family: var(--mono); font-size: 10px; color: var(--text3); min-width: 40px; }
+.tree-sub-name { flex: 1; font-weight: 500; color: var(--text2); }
+.tree-sub-body { padding-left: 14px; margin-top: 3px; }
+.tree-svc {
+  display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+  border-radius: var(--radius); font-size: 11px;
+}
+.tree-svc:hover { background: var(--bg3); }
+.tree-svc-cod { font-family: var(--mono); font-size: 10px; color: var(--text3); min-width: 58px; }
+.tree-svc-name { flex: 1; color: var(--text2); }
+.tree-svc-unid { font-size: 10px; color: var(--text3); min-width: 40px; }
+.add-link {
+  display: flex; align-items: center; gap: 5px; font-size: 11px;
+  color: var(--text3); cursor: pointer; padding: 5px 8px; margin-top: 3px;
+  border: 1px dashed var(--border2); border-radius: var(--radius);
+}
+.add-link:hover { color: var(--accent); border-color: var(--accent); }
+.inline-form {
+  background: var(--bg3); border-radius: var(--radius);
+  padding: 10px 12px; margin-top: 6px; display: none;
+}
+.inline-form.open { display: block; }
+
+/* Rank */
+.rank-item {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius2); margin-bottom: 8px;
+}
+.rank-num { font-size: 18px; font-weight: 700; min-width: 30px; color: var(--text3); }
+.rank-num.gold { color: #f59e0b; }
+.rank-num.silver { color: #9aa0b8; }
+.rank-num.bronze { color: #c77d41; }
+.rank-avatar {
+  width: 38px; height: 38px; border-radius: 50%; display: flex;
+  align-items: center; justify-content: center; font-size: 13px; font-weight: 600;
+}
+.rank-info { flex: 1; }
+.rank-name { font-size: 13px; font-weight: 500; }
+.rank-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.rank-score { font-size: 16px; font-weight: 700; color: var(--accent); }
+
+/* SIF/Apontamento calc box */
+.calc-box {
+  background: var(--bg3); border-radius: var(--radius); padding: 12px 14px;
+}
+.calc-row { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+.calc-row:last-child { margin-bottom: 0; font-weight: 600; font-size: 13px; }
+.calc-lbl { color: var(--text3); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+/* Responsive panels */
+.two-panel { display: grid; grid-template-columns: 260px 1fr; gap: 12px; align-items: start; }
+.list-scroll { display: flex; flex-direction: column; gap: 7px; max-height: 520px; overflow-y: auto; }
+
+/* Status dot */
+.status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+/* Chart bars */
+.bar-chart { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: flex; align-items: center; gap: 8px; font-size: 11px; }
+.bar-label { min-width: 120px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 6px; background: var(--bg4); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 3px; }
+.bar-val { min-width: 70px; text-align: right; font-weight: 500; }
+
+/* Period nav */
+.period-nav { display: flex; align-items: center; gap: 8px; }
+.period-btn {
+  width: 26px; height: 26px; border-radius: var(--radius); border: 1px solid var(--border);
+  background: transparent; color: var(--text3); cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-size: 13px;
+}
+.period-btn:hover { background: var(--bg3); color: var(--text); }
+.period-display {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 5px 12px; min-width: 180px;
+}
+.period-main { font-size: 13px; font-weight: 500; }
+.period-dates { font-size: 10px; color: var(--text3); font-family: var(--mono); }
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     LOGIN
+     ============================================================ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon"><i class="ti ti-truck"></i></div>
+      <div>
+        <div class="login-logo-text">FleetControl</div>
+        <div class="login-logo-sub">Conquista Empreendimentos</div>
+      </div>
+    </div>
+    <div class="login-title">Acesse o sistema</div>
+    <div class="login-sub">Use seu e-mail e senha cadastrados pelo gestor de frota.</div>
+    <div class="form-group">
+      <label class="form-label">E-mail</label>
+      <input class="form-input" type="email" placeholder="seu@email.com" id="login-email" placeholder="seu@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Senha</label>
+      <input class="form-input" type="password" placeholder="••••••••" id="login-pass" >
+    </div>
+    <button class="btn-login" onclick="doLogin()">Entrar</button>
+    <div class="login-note">Sistema de gestão de frota · Acesso restrito</div>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP
+     ============================================================ -->
+<div id="app">
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon"><i class="ti ti-truck"></i></div>
+      <div>
+        <div class="sidebar-logo-name">FleetControl</div>
+        <div class="sidebar-logo-sub">Conquista Emp.</div>
+      </div>
+    </div>
+    <div class="sidebar-user">
+      <div class="user-avatar" id="sidebar-avatar">GF</div>
+      <div class="user-info">
+        <div class="user-name" id="sidebar-name">Gustavo Ferreira</div>
+        <div class="user-role" id="sidebar-role">Gestor de frota</div>
+      </div>
+    </div>
+    <div class="sidebar-nav">
+      <div class="nav-item active" onclick="nav('dashboard',this)"><i class="ti ti-layout-dashboard"></i>Dashboard</div>
+
+      <div class="nav-section">Operacional</div>
+      <div class="nav-item" onclick="nav('planilha',this)"><i class="ti ti-table"></i>Planilha orçamentária</div>
+      <div class="nav-item" onclick="nav('horamaq',this)"><i class="ti ti-clock-hour-4"></i>Hora máquina (SIF)</div>
+      <div class="nav-item" onclick="nav('viagens',this)"><i class="ti ti-route"></i>Viagens</div>
+      <div class="nav-item" onclick="nav('abastec',this)"><i class="ti ti-gas-station"></i>Abastecimento</div>
+
+      <div class="nav-section">Gestão</div>
+      <div class="nav-item" onclick="nav('manutencao',this)"><i class="ti ti-tool"></i>Manutenção</div>
+      <div class="nav-item" onclick="nav('estoque',this)"><i class="ti ti-package"></i>Estoque</div>
+      <div class="nav-item" onclick="nav('seguros',this)"><i class="ti ti-shield-check"></i>Seguros <span class="nav-badge">3</span></div>
+
+      <div class="nav-section">Financeiro</div>
+      <div class="nav-item" onclick="nav('financeiro',this)"><i class="ti ti-report-money"></i>Financeiro da frota</div>
+      <div class="nav-item" onclick="nav('rank',this)"><i class="ti ti-trophy"></i>Rank de motoristas</div>
+
+      <div class="nav-section">Cadastros</div>
+      <div class="nav-item" onclick="nav('equipamentos',this)"><i class="ti ti-backhoe"></i>Equipamentos</div>
+      <div class="nav-item" onclick="nav('colaboradores',this)"><i class="ti ti-users"></i>Colaboradores</div>
+      <div class="nav-item" onclick="nav('loteamentos',this)"><i class="ti ti-map-pin"></i>Loteamentos</div>
+      <div class="nav-item" onclick="nav('usuarios',this)"><i class="ti ti-shield-lock"></i>Usuários</div>
+    </div>
+    <div class="sidebar-footer">
+      <div class="logout-btn" onclick="doLogout()"><i class="ti ti-logout"></i>Sair do sistema</div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title" id="page-title">Dashboard</div>
+      <div class="flex-row">
+        <div class="period-nav">
+          <button class="period-btn" onclick="navPeriod(-1)"><i class="ti ti-chevron-left"></i></button>
+          <div class="period-display">
+            <div class="period-main" id="period-main">Junho / 2026</div>
+            <div class="period-dates" id="period-dates">26/05/2026 — 25/06/2026</div>
+          </div>
+          <button class="period-btn" onclick="navPeriod(1)"><i class="ti ti-chevron-right"></i></button>
+        </div>
+        <button class="btn btn-sm"><i class="ti ti-bell"></i></button>
+        <button class="btn btn-sm"><i class="ti ti-settings"></i></button>
+      </div>
+    </div>
+    <div class="content">
+
+
+<!-- ============================================================ DASHBOARD ============================================================ -->
+<div class="page active" id="page-dashboard">
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Equipamentos ativos</div><div class="metric-value" id="dash-equip-count">0</div><div class="metric-sub" id="dash-equip-sub">Nenhum cadastrado</div></div>
+    <div class="metric"><div class="metric-label">Horas máquina (período)</div><div class="metric-value">—</div><div class="metric-sub">Sem lançamentos</div></div>
+    <div class="metric"><div class="metric-label">Receita frota</div><div class="metric-value">R$ 0</div><div class="metric-sub">Sem lançamentos</div></div>
+    <div class="metric"><div class="metric-label">Custo operacional</div><div class="metric-value">R$ 0</div><div class="metric-sub">Sem lançamentos</div></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-alert-triangle"></i> Alertas críticos</div>
+      <div style="display:flex;flex-direction:column;gap:8px" id="dash-alertas">
+        <div style="display:flex;align-items:center;gap:10px;padding:16px;color:var(--text3);font-size:12px">
+          <i class="ti ti-check" style="color:var(--green);font-size:20px"></i>
+          Nenhum alerta no momento. Cadastre equipamentos para começar.
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i> Equipamentos cadastrados</div>
+      <div id="dash-equip-chart" style="color:var(--text3);font-size:12px;padding:12px 0">
+        Nenhum equipamento cadastrado ainda. Use o painel de banco de dados para cadastrar.
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-title"><i class="ti ti-tractor"></i> Status da frota</div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Equipamento</th><th>Tipo</th><th>Placa</th><th>Horímetro</th><th>Taxa</th><th>Modal</th><th>Status</th></tr></thead>
+      <tbody id="dash-frota-tbody">
+        <tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">Nenhum equipamento cadastrado. Comece cadastrando sua frota no painel de banco de dados.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ EQUIPAMENTOS ============================================================ -->
+<div class="page" id="page-equipamentos">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Equipamentos <span style="color:var(--text3);font-weight:400;font-size:12px" id="equip-count">(0 cadastrados)</span></div>
+    <select style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none"><option>Todos os tipos</option><option>Máquina</option><option>Caminhão</option><option>Carro/Van</option></select>
+    <select style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none"><option>Todos os status</option><option>Operando</option><option>Manutenção</option><option>Parado</option></select>
+    <button class="btn btn-primary"><i class="ti ti-plus"></i>Novo equipamento</button>
+  </div>
+  <div class="two-panel">
+    <div class="list-scroll" id="equip-list-scroll">
+      <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">
+        <i class="ti ti-backhoe" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.3"></i>
+        Nenhum equipamento cadastrado.<br>Use o painel de banco de dados para adicionar.
+      </div>
+    </div>
+    <!-- DETAIL PANEL -->
+    <div class="detail-panel" id="equip-detail">
+      <div class="detail-header">
+        <div class="detail-icon" style="background:rgba(79,124,255,0.15)"><i class="ti ti-backhoe" style="color:var(--accent)"></i></div>
+        <div style="flex:1"><div class="detail-name">Selecione um equipamento</div><div class="detail-sub">Clique em um equipamento da lista para ver os detalhes</div></div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Identificação</div>
+        <div class="field-grid-3">
+          <div class="field"><div class="field-label">Código interno</div><div class="field-value accent mono">EX-140</div></div>
+          <div class="field"><div class="field-label">CC</div><div class="field-value accent">#032</div></div>
+          <div class="field"><div class="field-label">Tipo</div><div class="field-value">Máquina pesada</div></div>
+          <div class="field"><div class="field-label">Marca</div><div class="field-value">Hyundai</div></div>
+          <div class="field"><div class="field-label">Modelo</div><div class="field-value">R140 LC-9SB</div></div>
+          <div class="field"><div class="field-label">Ano</div><div class="field-value">2020</div></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-section">
+        <div class="detail-section-title">Registro e fiscal</div>
+        <div class="field-grid-3">
+          <div class="field"><div class="field-label">Nº de série</div><div class="field-value mono">HBRR140CKL000551</div></div>
+          <div class="field"><div class="field-label">Chassi</div><div class="field-value mono">HBRR140CKL000551</div></div>
+          <div class="field"><div class="field-label">Código FIPE</div><div class="field-value accent">—</div></div>
+          <div class="field"><div class="field-label">Combustível</div><div class="field-value">Diesel S10</div></div>
+          <div class="field"><div class="field-label">Tanque</div><div class="field-value">410 L</div></div>
+          <div class="field"><div class="field-label">Consumo médio</div><div class="field-value">18 L/h</div></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-section">
+        <div class="detail-section-title">Aquisição</div>
+        <div class="field-grid-3">
+          <div class="field"><div class="field-label">Valor de aquisição</div><div class="field-value">R$ 549.745</div></div>
+          <div class="field"><div class="field-label">Data de compra</div><div class="field-value">2020</div></div>
+          <div class="field"><div class="field-label">Depreciação/mês</div><div class="field-value warn">R$ 7.635</div></div>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-section">
+        <div class="detail-section-title">Horímetro e manutenção</div>
+        <div class="field-grid-3">
+          <div class="field"><div class="field-label">Horímetro atual</div><div class="field-value accent mono" style="font-size:16px">6.637 h</div></div>
+          <div class="field"><div class="field-label">Próxima manutenção</div><div class="field-value warn">6.700 h</div></div>
+          <div class="field"><div class="field-label">Restam</div><div class="field-value warn">63 h</div></div>
+          <div class="field"><div class="field-label">Intervalo prev.</div><div class="field-value">250 h</div></div>
+          <div class="field"><div class="field-label">Modalidade SIF</div><div class="field-value">Por hora · R$320/h</div></div>
+          <div class="field"><div class="field-label">Taxa diária</div><div class="field-value">—</div></div>
+        </div>
+        <div class="prog-wrap" style="margin-top:8px"><div class="prog-fill" style="width:94%;background:var(--yellow)"></div></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">94% do intervalo atingido</div>
+      </div>
+      <div class="divider"></div>
+      <div class="detail-section">
+        <div class="detail-section-title">Operadores habilitados</div>
+        <div class="flex-row" style="flex-wrap:wrap">
+          <span class="badge badge-blue">Clebson</span>
+          <span class="badge badge-blue">Israel Candido</span>
+          <span class="badge badge-blue">Rinaldo</span>
+          <span class="badge badge-blue">Wellington Franco</span>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">Documentos</div>
+        <div style="display:flex;flex-direction:column;gap:5px">
+          <div class="doc-row"><i class="ti ti-file-description" style="color:var(--text3)"></i><span style="flex:1">Nota fiscal de aquisição</span><span style="color:var(--text3);font-size:10px">2020</span><i class="ti ti-download" style="color:var(--text3)"></i></div>
+          <div class="doc-row doc-add"><i class="ti ti-upload"></i><span>Anexar documento (PDF, JPG)</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ COLABORADORES ============================================================ -->
+<div class="page" id="page-colaboradores">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Colaboradores <span style="color:var(--text3);font-weight:400;font-size:12px" id="colab-count">(0 cadastrados)</span></div>
+    <select style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none"><option>Todas as funções</option><option>Motorista</option><option>Operador</option><option>Encarregado</option></select>
+    <button class="btn btn-primary"><i class="ti ti-plus"></i>Novo colaborador</button>
+  </div>
+  <div class="info-box"><i class="ti ti-info-circle"></i>Um colaborador pode exercer mais de uma função. A função de cada dia é registrada no apontamento — não no cadastro.</div>
+  <div class="two-panel">
+    <div class="list-scroll" id="colab-list-scroll">
+      <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px">
+        <i class="ti ti-users" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.3"></i>
+        Nenhum colaborador cadastrado.<br>Use o painel de banco de dados para adicionar.
+      </div>
+    </div>
+    <div class="detail-panel" id="colab-detail">
+      <div class="detail-header">
+        <div class="detail-icon" style="background:var(--accent-bg);border-radius:50%;font-size:16px;font-weight:600;color:var(--accent)"><i class="ti ti-user"></i></div>
+        <div style="flex:1"><div class="detail-name">Selecione um colaborador</div><div class="detail-sub">Clique em um colaborador da lista para ver os detalhes</div></div>
+      </div>
+      <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;margin-top:20px">
+        <i class="ti ti-users" style="font-size:40px;display:block;margin-bottom:12px;opacity:0.2"></i>
+        Cadastre colaboradores pelo painel de banco de dados e eles aparecerão aqui.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ LOTEAMENTOS ============================================================ -->
+<div class="page" id="page-loteamentos">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Loteamentos</div>
+    <button class="btn btn-primary"><i class="ti ti-plus"></i>Novo loteamento</button>
+  </div>
+  <div style="padding:40px;text-align:center;color:var(--text3);font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2)" id="lote-lista">
+    <i class="ti ti-map-pin" style="font-size:40px;display:block;margin-bottom:12px;opacity:0.2"></i>
+    Nenhum loteamento cadastrado ainda.<br>Clique em "Novo loteamento" para começar.
+  </div>
+</div>
+
+<!-- ============================================================ USUÁRIOS ============================================================ -->
+<div class="page" id="page-usuarios">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Usuários do sistema</div>
+    <button class="btn btn-primary"><i class="ti ti-plus"></i>Novo usuário</button>
+  </div>
+  <div class="warn-box"><i class="ti ti-shield"></i>Apenas Diretores podem criar e gerenciar usuários. Gestores definem quais loteamentos cada encarregado enxerga no mobile.</div>
+  <div class="g2">
+    <div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px" id="usuarios-lista">
+        <div style="padding:20px;text-align:center;color:var(--text3);font-size:12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius2)">
+          <i class="ti ti-shield-lock" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.3"></i>
+          Nenhum usuário cadastrado ainda.<br>Clique em "Novo usuário" para começar.
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-lock"></i> Matriz de permissões</div>
+      <div class="table-wrap">
+      <table style="font-size:11px">
+        <thead><tr><th>Módulo</th><th style="text-align:center">Diretor</th><th style="text-align:center">Gestor</th><th style="text-align:center">Encarregado</th></tr></thead>
+        <tbody>
+          <tr><td>Dashboard</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td></tr>
+          <tr><td>Planilha orçamentária</td><td style="text-align:center"><span class="badge badge-purple" style="font-size:9px">Editar</span></td><td style="text-align:center"><span class="badge badge-blue" style="font-size:9px">Editar</span></td><td style="text-align:center"><span class="badge badge-gray" style="font-size:9px">Ler</span></td></tr>
+          <tr><td>Hora máquina (SIF)</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><span class="badge badge-green" style="font-size:9px">Lançar</span></td></tr>
+          <tr><td>Viagens</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><span class="badge badge-green" style="font-size:9px">Lançar</span></td></tr>
+          <tr><td>Abastecimento</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><span class="badge badge-green" style="font-size:9px">Lançar</span></td></tr>
+          <tr><td>Manutenção</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-x" style="color:var(--red)"></i></td></tr>
+          <tr><td>Estoque</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-x" style="color:var(--red)"></i></td></tr>
+          <tr><td>Seguros</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-x" style="color:var(--red)"></i></td></tr>
+          <tr><td>Financeiro</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-x" style="color:var(--red)"></i></td></tr>
+          <tr><td>Cadastros</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><span class="badge badge-blue" style="font-size:9px">Editar</span></td><td style="text-align:center"><i class="ti ti-x" style="color:var(--red)"></i></td></tr>
+          <tr><td>Usuários</td><td style="text-align:center"><i class="ti ti-check" style="color:var(--green)"></i></td><td style="text-align:center"><i class="ti ti-x" style="color:var(--red)"></i></td><td style="text-align:center"><i class="ti ti-x" style="color:var(--red)"></i></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ PLANILHA ORÇAMENTÁRIA ============================================================ -->
+<div class="page" id="page-planilha">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Planilha orçamentária <span class="badge badge-purple" style="margin-left:4px">Gestor / Diretor</span></div>
+    <select id="sel-obra" style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none">
+      <option value="liberta">Loteamento Libertá (JRF) — Cod. 27</option>
+      <option value="giuclube">Giuclube — Cod. 12</option>
+      <option value="cidade">Cidade Alta Rio Bananal — Cod. 18</option>
+      <option value="barragem">Barragem Aracruz — Cod. 199 (Não se aplica)</option>
+    </select>
+    <button class="btn"><i class="ti ti-download"></i>Exportar</button>
+    <button class="btn btn-primary" onclick="toggleInline('form-nova-obra')"><i class="ti ti-plus"></i>Nova obra</button>
+  </div>
+  <div class="info-box"><i class="ti ti-lock"></i>Somente Gestores e Diretores editam. Os serviços cadastrados aqui aparecem no seletor do apontamento de hora máquina (SIF). Códigos gerados automaticamente.</div>
+
+  <!-- FORM NOVA OBRA -->
+  <div class="inline-form card" id="form-nova-obra" style="border:1px solid var(--accent)">
+    <div class="flex-row" style="margin-bottom:12px"><div style="font-size:13px;font-weight:500">Nova obra</div><button class="btn-icon" style="margin-left:auto" onclick="toggleInline('form-nova-obra')"><i class="ti ti-x"></i></button></div>
+    <div class="g2">
+      <div class="form-row"><label>Nome da obra</label><input type="text" placeholder="Ex: Loteamento Riviera"></div>
+      <div class="form-row"><label>Código interno</label><input type="text" placeholder="Ex: 305"></div>
+      <div class="form-row"><label>Cliente / Empreendedor</label><input type="text" placeholder="Ex: JRF Empreendimentos"></div>
+      <div class="form-row"><label>Localização</label><input type="text" placeholder="Cidade, ES"></div>
+    </div>
+    <div class="form-row"><label>Frota faz apontamento (SIF)?</label><select><option>Sim — planilha orçamentária ativa (Se aplica)</option><option>Não — obra administrativa</option></select></div>
+    <div class="flex-row"><button class="btn btn-primary"><i class="ti ti-check"></i>Salvar obra</button><button class="btn" onclick="toggleInline('form-nova-obra')">Cancelar</button></div>
+  </div>
+
+  <div class="g2">
+    <!-- ÁRVORE DE ETAPAS -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:500">Libertá (JRF) — Etapas e serviços</div>
+        <button class="btn btn-sm" onclick="toggleInline('form-etapa-new')"><i class="ti ti-plus"></i>Etapa</button>
+      </div>
+
+      <div class="tree-etapa">
+        <div class="tree-etapa-hdr" onclick="toggleTree('t2')">
+          <i class="ti ti-chevron-down" id="ico-t2" style="font-size:13px;color:var(--text3)"></i>
+          <span class="tree-cod">2</span><span class="tree-name">Terraplanagem</span>
+          <button class="btn-icon" onclick="event.stopPropagation()"><i class="ti ti-edit"></i></button>
+          <button class="btn-icon" onclick="event.stopPropagation()"><i class="ti ti-trash"></i></button>
+        </div>
+        <div class="tree-body" id="t2">
+          <div class="tree-sub">
+            <div class="tree-sub-hdr" onclick="toggleTree('ts2001')">
+              <i class="ti ti-chevron-down" id="ico-ts2001" style="font-size:11px;color:var(--text3)"></i>
+              <span class="tree-sub-cod">2001</span><span class="tree-sub-name">Escavação / Transporte</span>
+              <button class="btn-icon" onclick="event.stopPropagation()"><i class="ti ti-edit"></i></button>
+              <button class="btn-icon" onclick="event.stopPropagation()"><i class="ti ti-trash"></i></button>
+            </div>
+            <div class="tree-sub-body" id="ts2001">
+              <div class="tree-svc"><span class="tree-svc-cod">2001.001</span><span class="tree-svc-name">CNI - Escavação de Material 1ª Categoria com Escavadeira Hidráulica (Caçamba 0,8m³)</span><span class="tree-svc-unid">Hora</span><button class="btn-icon"><i class="ti ti-edit"></i></button></div>
+              <div class="tree-svc"><span class="tree-svc-cod">2001.002</span><span class="tree-svc-name">CNI - Transporte de Material em Caminhão Basculante</span><span class="tree-svc-unid">Diária</span><button class="btn-icon"><i class="ti ti-edit"></i></button></div>
+              <div class="add-link" onclick="toggleInline('form-svc-2001')"><i class="ti ti-plus"></i>Serviço em 2001</div>
+              <div class="inline-form" id="form-svc-2001">
+                <div style="display:flex;gap:8px;margin-bottom:8px">
+                  <div class="form-row" style="flex:3;margin:0"><label>Descrição</label><input type="text" placeholder="CNI - Escavação manual"></div>
+                  <div class="form-row" style="max-width:80px;margin:0"><label>Unidade</label><select><option>Hora</option><option>Diária</option><option>m³</option></select></div>
+                </div>
+                <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Código gerado automaticamente: <strong style="color:var(--accent)">2001.003</strong></div>
+                <div class="flex-row"><button class="btn btn-primary btn-sm"><i class="ti ti-check"></i>Salvar</button><button class="btn btn-sm" onclick="toggleInline('form-svc-2001')">Cancelar</button></div>
+              </div>
+            </div>
+          </div>
+          <div class="tree-sub">
+            <div class="tree-sub-hdr" onclick="toggleTree('ts2002')">
+              <i class="ti ti-chevron-right" id="ico-ts2002" style="font-size:11px;color:var(--text3)"></i>
+              <span class="tree-sub-cod">2002</span><span class="tree-sub-name">Aterro compactado</span>
+              <button class="btn-icon" onclick="event.stopPropagation()"><i class="ti ti-edit"></i></button>
+            </div>
+            <div class="tree-sub-body" id="ts2002" style="display:none">
+              <div class="tree-svc"><span class="tree-svc-cod">2002.001</span><span class="tree-svc-name">CNI - Aterro Mecanizado com Compactação</span><span class="tree-svc-unid">Hora</span><button class="btn-icon"><i class="ti ti-edit"></i></button></div>
+            </div>
+          </div>
+          <div class="add-link" onclick="toggleInline('form-sub-2')"><i class="ti ti-plus"></i>Sub-etapa em Terraplanagem</div>
+          <div class="inline-form" id="form-sub-2">
+            <div class="form-row"><label>Nome da sub-etapa</label><input type="text" placeholder="Ex: Limpeza de terreno"></div>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Código gerado: <strong style="color:var(--accent)">2003</strong></div>
+            <div class="flex-row"><button class="btn btn-primary btn-sm"><i class="ti ti-check"></i>Salvar</button><button class="btn btn-sm" onclick="toggleInline('form-sub-2')">Cancelar</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tree-etapa">
+        <div class="tree-etapa-hdr" onclick="toggleTree('t3')">
+          <i class="ti ti-chevron-right" id="ico-t3" style="font-size:13px;color:var(--text3)"></i>
+          <span class="tree-cod">3</span><span class="tree-name">Pavimentação</span>
+          <button class="btn-icon" onclick="event.stopPropagation()"><i class="ti ti-edit"></i></button>
+          <button class="btn-icon" onclick="event.stopPropagation()"><i class="ti ti-trash"></i></button>
+        </div>
+        <div class="tree-body" id="t3" style="display:none">
+          <div class="tree-sub"><div class="tree-sub-hdr"><span class="tree-sub-cod">3001</span><span class="tree-sub-name">Base de pavimentação</span></div></div>
+        </div>
+      </div>
+
+      <div class="tree-etapa">
+        <div class="tree-etapa-hdr" onclick="toggleTree('t4')">
+          <i class="ti ti-chevron-right" id="ico-t4" style="font-size:13px;color:var(--text3)"></i>
+          <span class="tree-cod">4</span><span class="tree-name">Esgoto</span>
+          <button class="btn-icon" onclick="event.stopPropagation()"><i class="ti ti-edit"></i></button>
+        </div>
+        <div class="tree-body" id="t4" style="display:none">
+          <div class="tree-sub"><div class="tree-sub-hdr"><span class="tree-sub-cod">4001</span><span class="tree-sub-name">Escavação de valas</span></div></div>
+        </div>
+      </div>
+
+      <div class="inline-form" id="form-etapa-new">
+        <div class="form-row"><label>Nome da etapa</label><input type="text" placeholder="Ex: Drenagem" id="inp-etapa"></div>
+        <div style="font-size:11px;color:var(--text3);margin-bottom:6px">Código gerado: <strong style="color:var(--accent)">5</strong></div>
+        <div class="flex-row"><button class="btn btn-primary btn-sm"><i class="ti ti-check"></i>Salvar etapa</button><button class="btn btn-sm" onclick="toggleInline('form-etapa-new')">Cancelar</button></div>
+      </div>
+    </div>
+
+    <!-- INFO OBRA -->
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-info-circle"></i>Estrutura de códigos</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:9px"><div class="mono" style="color:var(--accent);font-size:13px;margin-bottom:2px">2</div><div style="color:var(--text3)">Etapa — nível principal</div></div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:9px;margin-left:12px"><div class="mono" style="color:var(--accent);font-size:13px;margin-bottom:2px">2001</div><div style="color:var(--text3)">Sub-etapa — agrupa serviços</div></div>
+          <div style="background:var(--bg3);border-radius:var(--radius);padding:9px;margin-left:24px"><div class="mono" style="color:var(--accent);font-size:13px;margin-bottom:2px">2001.001</div><div style="color:var(--text3)">Serviço — selecionável no SIF</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-building"></i>Dados da obra</div>
+        <div style="display:flex;flex-direction:column;gap:6px;font-size:11px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Código</span><span style="font-weight:500">27</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Cliente</span><span style="font-weight:500">JRF Empreendimentos</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Localização</span><span style="font-weight:500">Linhares, ES</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Status SIF</span><span><span class="badge badge-green">Se aplica</span></span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Etapas</span><span style="font-weight:500">4</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Serviços</span><span style="font-weight:500">8</span></div>
+          <div class="divider" style="margin:4px 0"></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Faturado (período)</span><span style="font-weight:500;color:var(--accent)">R$ 148.220</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-plus"></i>Aditivos</div>
+        <div style="font-size:11px;display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Contrato original</span><span>R$ 48.000</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Aditivos aprovados</span><span style="color:var(--yellow)">+ R$ 6.000</span></div>
+          <div style="display:flex;justify-content:space-between;font-weight:500"><span>Contrato revisado</span><span style="color:var(--accent)">R$ 54.000</span></div>
+        </div>
+        <button class="btn btn-sm" style="margin-top:10px;width:100%"><i class="ti ti-plus"></i>Registrar aditivo</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ HORA MÁQUINA (SIF) ============================================================ -->
+<div class="page" id="page-horamaq">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Apontamento hora máquina — SIF <span class="badge badge-purple" style="margin-left:4px">Gestor / Diretor</span></div>
+    <select id="sif-equip-sel" onchange="updSIF()" style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none">
+      <option value="ex140" data-modal="hora" data-taxa="320">Escavadeira 140 · R$320/h</option>
+      <option value="ex145" data-modal="hora" data-taxa="320">Escavadeira 145 · R$320/h</option>
+      <option value="ex220" data-modal="hora" data-taxa="380">Escavadeira 220 · R$380/h</option>
+      <option value="moto170" data-modal="hora" data-taxa="370">Motoniveladora 170 · R$370/h</option>
+      <option value="motocase" data-modal="hora" data-taxa="340">Motoniveladora Case · R$340/h</option>
+      <option value="rolo01" data-modal="diaria" data-taxa="1800">Rolo Compact. 01 · R$1.800/dia</option>
+      <option value="rolo02" data-modal="diaria" data-taxa="1900">Rolo Compact. 02 · R$1.900/dia</option>
+      <option value="retro01" data-modal="hora" data-taxa="215">Retroescavadeira 01 · R$215/h</option>
+      <option value="retro02" data-modal="hora" data-taxa="215">Retroescavadeira 02 · R$215/h</option>
+      <option value="odr" data-modal="diaria" data-taxa="1900">ODR-3G42 (Cavalo MB) · R$1.900/dia</option>
+      <option value="ppj" data-modal="diaria" data-taxa="1800">PPJ-5430 (Caçamba) · R$1.800/dia</option>
+    </select>
+    <button class="btn"><i class="ti ti-download"></i>Exportar SIF</button>
+  </div>
+
+  <!-- HEADER SIF -->
+  <div class="card card-sm">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+      <div>
+        <div style="font-size:13px;font-weight:500" id="sif-header-nome">SIF — Escavadeira 140</div>
+        <div style="font-size:11px;color:var(--text3)">Período Junho / 2026 · <span class="mono" style="color:var(--text3)">Competência 26/05/2026 — 25/06/2026</span></div>
+      </div>
+      <div style="display:flex;gap:20px">
+        <div style="text-align:right"><div style="font-size:10px;color:var(--text3)">Horímetro inicial</div><div class="mono" style="font-size:14px;font-weight:600;color:var(--accent)">6.562,7 h</div></div>
+        <div style="text-align:right"><div style="font-size:10px;color:var(--text3)">Horímetro final</div><div class="mono" style="font-size:14px;font-weight:600;color:var(--accent)">6.637,5 h</div></div>
+        <div style="text-align:right"><div style="font-size:10px;color:var(--text3)">Total horas</div><div style="font-size:14px;font-weight:600;color:var(--green)">74,8 h</div></div>
+        <div style="text-align:right"><div style="font-size:10px;color:var(--text3)">Faturamento</div><div style="font-size:14px;font-weight:600;color:var(--green)" id="sif-fat-total">R$ 23.936</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AVISO DIÁRIA -->
+  <div class="warn-box" id="sif-regra-diaria" style="display:none"><i class="ti ti-info-circle"></i><span>Modalidade <strong>diária</strong>: até 3h → % proporcional · 3h a 5h → meia diária · acima de 5h → diária cheia. O cálculo é feito automaticamente.</span></div>
+
+  <!-- FORM NOVO APONTAMENTO -->
+  <div class="card" style="border:1px solid var(--accent)">
+    <div style="font-size:13px;font-weight:500;margin-bottom:14px;display:flex;align-items:center;gap:8px"><i class="ti ti-plus" style="color:var(--accent)"></i>Novo apontamento — <span id="sif-form-nome">Escavadeira 140</span><span class="badge badge-blue" id="sif-modal-badge">Por hora · R$320/h</span></div>
+    <div class="g2">
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Identificação</div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>Data do serviço</label><input type="date" value="2026-06-23" id="sif-data"></div>
+          <div class="form-row" style="flex:1"><label>Operador</label><select id="sif-operador"><option>Clebson</option><option>Israel Candido</option><option>Rinaldo</option><option>Wellington Franco</option><option>Railan Bandeira</option></select></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>Hora início</label><input type="time" value="07:00" id="sif-ini" oninput="updSIFCalc()"></div>
+          <div class="form-row" style="flex:1"><label>Hora fim</label><input type="time" value="14:30" id="sif-fim" oninput="updSIFCalc()"></div>
+          <div class="form-row" style="flex:1"><label>Total horas</label><input type="text" id="sif-th" value="7,5h" readonly style="background:var(--bg4);color:var(--accent)"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>Horímetro inicial</label><input type="number" value="6630.7" id="sif-hi" step="0.1" oninput="updSIFCalc()"></div>
+          <div class="form-row" style="flex:1"><label>Horímetro final</label><input type="number" value="6637.5" id="sif-hf" step="0.1" oninput="updSIFCalc()"></div>
+          <div class="form-row" style="flex:1"><label>Δ Horímetro</label><input type="text" id="sif-dh" value="6,8" readonly style="background:var(--bg4);color:var(--accent)"></div>
+        </div>
+        <div class="form-row"><label>Horímetro total acumulado</label><input type="text" id="sif-htotal" value="6.637,5 h" readonly style="background:var(--bg4);color:var(--accent);font-family:var(--mono)"></div>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Serviço executado</div>
+        <div class="form-row"><label>Obra</label><select id="sif-obra"><option>Loteamento Libertá (Cod. 27)</option><option>Giuclube (Cod. 12)</option><option>Cidade Alta (Cod. 18)</option></select></div>
+        <div class="form-row"><label>Etapa</label><select id="sif-etapa"><option value="2">2 — Terraplanagem</option><option value="3">3 — Pavimentação</option><option value="4">4 — Esgoto</option></select></div>
+        <div class="form-row"><label>Sub-etapa</label><select id="sif-sub"><option value="2001">2001 — Escavação / Transporte</option><option value="2002">2002 — Aterro compactado</option></select></div>
+        <div class="form-row"><label>Serviço</label><select id="sif-svc"><option value="2001.001">2001.001 — CNI - Escavação de Material 1ª Categoria com Escavadeira</option><option value="2001.002">2001.002 — CNI - Transporte de Material em Caminhão Basculante</option></select></div>
+        <div class="form-row"><label>Observações (opcional)</label><textarea id="sif-obs" placeholder="Ex: Solo úmido, dificuldade de acesso ao setor C"></textarea></div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div class="g2" style="margin-bottom:12px">
+      <div class="calc-box">
+        <div class="calc-row"><span class="calc-lbl">Modalidade</span><span id="calc-modal">Por hora</span></div>
+        <div class="calc-row"><span class="calc-lbl">Taxa</span><span id="calc-taxa">R$ 320,00/h</span></div>
+        <div class="calc-row"><span class="calc-lbl">Horas trabalhadas</span><span id="calc-horas">7,5 h</span></div>
+        <div class="divider" style="margin:6px 0"></div>
+        <div class="calc-row"><span class="calc-lbl">Valor do apontamento</span><span style="color:var(--accent);font-size:15px" id="calc-valor">R$ 2.400,00</span></div>
+      </div>
+      <div class="calc-box" id="calc-diaria-box" style="display:none">
+        <div class="calc-row"><span class="calc-lbl">Horas registradas</span><span id="calc-d-horas">—</span></div>
+        <div class="calc-row"><span class="calc-lbl">Regra aplicada</span><span id="calc-d-regra">—</span></div>
+        <div class="calc-row"><span class="calc-lbl">Valor diária cheia</span><span id="calc-d-cheia">—</span></div>
+        <div class="divider" style="margin:6px 0"></div>
+        <div class="calc-row"><span class="calc-lbl">Valor do apontamento</span><span style="color:var(--accent);font-size:15px" id="calc-d-valor">—</span></div>
+      </div>
+    </div>
+    <div class="flex-row">
+      <button class="btn btn-primary" onclick="salvarSIF()"><i class="ti ti-check"></i>Salvar apontamento</button>
+      <button class="btn">Limpar</button>
+    </div>
+    <div id="sif-ok-msg" style="display:none;margin-top:10px;padding:8px 12px;background:var(--green-bg);border-radius:var(--radius);font-size:11px;color:var(--green)"><i class="ti ti-check"></i> Apontamento salvo — <span id="sif-ok-val"></span> lançados no centro de custo da máquina.</div>
+  </div>
+
+  <!-- TABELA REGISTROS -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div>
+        <div style="font-size:13px;font-weight:500" id="sif-tbl-titulo">Registros — Escavadeira 140</div>
+        <div style="font-size:10px;color:var(--text3);font-family:var(--mono)">competência 26/05/2026 — 25/06/2026</div>
+      </div>
+      <div class="flex-row">
+        <select style="padding:5px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:11px;outline:none"><option>Todas as obras</option><option>Libertá (27)</option><option>Giuclube (12)</option></select>
+        <button class="btn btn-sm"><i class="ti ti-download"></i>Exportar</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+    <table style="min-width:980px;table-layout:fixed">
+      <thead><tr>
+        <th style="width:62px">Data</th><th style="width:72px">Operador</th>
+        <th style="width:44px">Início</th><th style="width:40px">Fim</th><th style="width:42px">Horas</th>
+        <th style="width:52px">Hor.ini</th><th style="width:52px">Hor.fin</th><th style="width:56px">Hor.total</th>
+        <th style="width:58px">Obra</th><th style="width:68px">Etapa</th><th style="width:66px">Sub-etapa</th>
+        <th style="width:120px">Serviço</th><th style="width:42px">Unid.</th>
+        <th style="width:52px">R$ Unit.</th><th style="width:60px">R$ Total</th>
+        <th style="width:80px">Obs.</th><th style="width:42px">Ações</th>
+      </tr></thead>
+      <tbody id="sif-tbody">
+        <tr class="tr-sep"><td colspan="17"><i class="ti ti-calendar-event" style="vertical-align:-2px"></i> início do período — 26/05/2026</td></tr>
+        <tr><td style="color:var(--text3)">26/05/26</td><td>Clebson</td><td>07:00</td><td>17:00</td><td>10,0h</td><td class="mono">6.562,7</td><td class="mono">6.569,8</td><td class="mono" style="color:var(--accent)">6.569,8h</td><td><span class="badge badge-gray" style="font-size:9px">Giuclube</span></td><td style="font-size:10px">2 — Terrap.</td><td style="font-size:10px">2001</td><td style="font-size:10px">2001.001 — CNI Escavação 1ª Cat.</td><td>Hora</td><td>R$320</td><td style="font-weight:600;color:var(--accent)">R$2.272</td><td style="font-size:10px;color:var(--text3)">—</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr class="tr-sep"><td colspan="17"><i class="ti ti-calendar" style="vertical-align:-2px"></i> virada de mês — 01/06/2026</td></tr>
+        <tr><td>02/06/26</td><td>Clebson</td><td>07:00</td><td>17:00</td><td>10,0h</td><td class="mono">6.596,9</td><td class="mono">6.602,1</td><td class="mono" style="color:var(--accent)">6.602,1h</td><td><span class="badge badge-blue" style="font-size:9px">Libertá</span></td><td style="font-size:10px">2 — Terrap.</td><td style="font-size:10px">2001</td><td style="font-size:10px">2001.001 — CNI Escavação 1ª Cat.</td><td>Hora</td><td>R$320</td><td style="font-weight:600;color:var(--accent)">R$1.664</td><td style="font-size:10px;color:var(--text3)">—</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr><td>15/06/26</td><td>Clebson</td><td>07:00</td><td>17:00</td><td>10,0h</td><td class="mono">6.621,6</td><td class="mono">6.626,1</td><td class="mono" style="color:var(--accent)">6.626,1h</td><td><span class="badge badge-blue" style="font-size:9px">Libertá</span></td><td style="font-size:10px">3 — Pavim.</td><td style="font-size:10px">3001</td><td style="font-size:10px">3001.001 — CNI Compact. Base</td><td>Hora</td><td>R$320</td><td style="font-weight:600;color:var(--accent)">R$1.440</td><td style="font-size:10px;color:var(--text3)">Solo úmido setor B</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr id="sif-new-row" style="display:none;background:rgba(34,197,94,0.06)"><td id="sn-data"></td><td id="sn-op"></td><td id="sn-ini"></td><td id="sn-fim"></td><td id="sn-h"></td><td class="mono" id="sn-hi"></td><td class="mono" id="sn-hf"></td><td class="mono" style="color:var(--accent)" id="sn-ht"></td><td><span class="badge badge-blue" style="font-size:9px">Libertá</span></td><td id="sn-et" style="font-size:10px"></td><td id="sn-sub" style="font-size:10px"></td><td id="sn-svc" style="font-size:10px"></td><td id="sn-unid"></td><td id="sn-unit"></td><td style="font-weight:600;color:var(--accent)" id="sn-total"></td><td id="sn-obs" style="font-size:10px;color:var(--text3)"></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr class="tr-sep"><td colspan="17"><i class="ti ti-calendar-event" style="vertical-align:-2px"></i> fim do período — 25/06/2026</td></tr>
+        <tr class="tr-total"><td colspan="14">Total do período (26/05 — 25/06)</td><td id="sif-tbl-total">R$ 23.936</td><td colspan="2"></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ VIAGENS ============================================================ -->
+<div class="page" id="page-viagens">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Viagens — caminhões</div>
+    <button class="btn btn-primary" onclick="toggleInline('form-viagem')"><i class="ti ti-plus"></i>Registrar viagem</button>
+    <button class="btn"><i class="ti ti-download"></i>Relatório</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Viagens hoje</div><div class="metric-value">47</div><div class="metric-sub">caminhões ativos: 8</div></div>
+    <div class="metric"><div class="metric-label">m³ transportados hoje</div><div class="metric-value">940</div><div class="metric-sub">média 20 m³/viagem</div></div>
+    <div class="metric"><div class="metric-label">m³ no período</div><div class="metric-value">18.420</div><div class="metric-sub metric-up">↑ 12% vs período ant.</div></div>
+    <div class="metric"><div class="metric-label">Custo/m³ médio</div><div class="metric-value">R$1,74</div><div class="metric-sub">todos os caminhões</div></div>
+  </div>
+
+  <!-- FORM NOVA VIAGEM -->
+  <div class="inline-form card" id="form-viagem" style="border:1px solid var(--accent)">
+    <div class="flex-row" style="margin-bottom:12px"><div style="font-size:13px;font-weight:500"><i class="ti ti-route" style="color:var(--accent)"></i> Nova viagem</div><button class="btn-icon" style="margin-left:auto" onclick="toggleInline('form-viagem')"><i class="ti ti-x"></i></button></div>
+    <div class="g2">
+      <div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>Data do serviço</label><input type="date" value="2026-06-23"></div>
+          <div class="form-row" style="flex:1"><label>Hora</label><input type="time" value="07:15"></div>
+        </div>
+        <div class="form-row"><label>Caminhão</label><select><option>ODR-3G42 — MB Axor 2544 (Cavalo)</option><option>PPJ-5430 — MB Atego 2426 Caçamba</option><option>SVV-0H68 — MB Atego 2426 Caçamba</option><option>RBF-5I47 — MB Atego 2426 Caçamba</option><option>RUQ-5I34 — MB Axor 2644</option></select></div>
+        <div class="form-row"><label>Motorista</label><select><option>Marcos Lima</option><option>Roberto Santos</option><option>Israel Candido</option></select></div>
+      </div>
+      <div>
+        <div class="form-row"><label>Origem (loteamento / área)</label><select><option>Lote Libertá — Área de corte</option><option>Lote Libertá — Bota-fora</option><option>Lote Giuclube — Corte</option><option>Lote Cidade Alta — Área A</option></select></div>
+        <div class="form-row"><label>Destino (loteamento / área)</label><select><option>Lote Libertá — Aterro setor B</option><option>Lote Giuclube — Aterro</option><option>Descarte externo</option></select></div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>m³ carregados</label><input type="number" placeholder="Ex: 22"></div>
+          <div class="form-row" style="flex:1"><label>Tipo de material</label><select><option>Terra</option><option>Terra argilosa</option><option>Entulho</option><option>Brita</option><option>Aterro selecionado</option></select></div>
+        </div>
+        <div class="form-row"><label>Observações</label><textarea placeholder="Opcional..."></textarea></div>
+      </div>
+    </div>
+    <div class="flex-row"><button class="btn btn-primary"><i class="ti ti-check"></i>Registrar viagem</button><button class="btn" onclick="toggleInline('form-viagem')">Cancelar</button></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i> m³ por caminhão — período</div>
+      <div class="bar-chart">
+        <div class="bar-row"><span class="bar-label">ODR-3G42</span><div class="bar-track"><div class="bar-fill" style="width:100%;background:var(--accent)"></div></div><span class="bar-val" style="color:var(--accent)">4.820 m³</span></div>
+        <div class="bar-row"><span class="bar-label">PPJ-5430</span><div class="bar-track"><div class="bar-fill" style="width:84%;background:var(--accent)"></div></div><span class="bar-val">4.060 m³</span></div>
+        <div class="bar-row"><span class="bar-label">RBF-5I47</span><div class="bar-track"><div class="bar-fill" style="width:72%;background:var(--accent)"></div></div><span class="bar-val">3.480 m³</span></div>
+        <div class="bar-row"><span class="bar-label">SVV-0H68</span><div class="bar-track"><div class="bar-fill" style="width:65%;background:var(--accent)"></div></div><span class="bar-val">3.140 m³</span></div>
+        <div class="bar-row"><span class="bar-label">RUQ-5I34</span><div class="bar-track"><div class="bar-fill" style="width:60%;background:var(--yellow)"></div></div><span class="bar-val">2.920 m³</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i> Custo/m³ por caminhão</div>
+      <div class="bar-chart">
+        <div class="bar-row"><span class="bar-label">RBF-5I47</span><div class="bar-track"><div class="bar-fill" style="width:58%;background:var(--green)"></div></div><span class="bar-val" style="color:var(--green)">R$1,49</span></div>
+        <div class="bar-row"><span class="bar-label">PPJ-5430</span><div class="bar-track"><div class="bar-fill" style="width:68%;background:var(--accent)"></div></div><span class="bar-val" style="color:var(--accent)">R$1,75</span></div>
+        <div class="bar-row"><span class="bar-label">SVV-0H68</span><div class="bar-track"><div class="bar-fill" style="width:74%;background:var(--accent)"></div></div><span class="bar-val">R$1,90</span></div>
+        <div class="bar-row"><span class="bar-label">ODR-3G42</span><div class="bar-track"><div class="bar-fill" style="width:82%;background:var(--yellow)"></div></div><span class="bar-val" style="color:var(--yellow)">R$2,10</span></div>
+        <div class="bar-row"><span class="bar-label">RUQ-5I34</span><div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--yellow)"></div></div><span class="bar-val" style="color:var(--yellow)">R$2,30</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:500">Registro de viagens — período</div>
+      <div class="flex-row">
+        <select style="padding:5px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:11px;outline:none"><option>Todos os caminhões</option><option>ODR-3G42</option><option>PPJ-5430</option></select>
+        <select style="padding:5px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:11px;outline:none"><option>Todas as obras</option><option>Libertá (27)</option></select>
+      </div>
+    </div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Hora</th><th>Caminhão</th><th>Motorista</th><th>Origem</th><th>Destino</th><th>m³</th><th>Material</th><th>Obs.</th><th>Ações</th></tr></thead>
+      <tbody>
+        <tr><td>23/06</td><td>07:15</td><td>ODR-3G42</td><td>Marcos L.</td><td>Libertá — Corte</td><td>Libertá — Aterro B</td><td style="font-weight:600;color:var(--accent)">22</td><td>Terra</td><td style="color:var(--text3)">—</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr><td>23/06</td><td>08:30</td><td>PPJ-5430</td><td>Roberto S.</td><td>Libertá — Bota-fora</td><td>Libertá — Aterro B</td><td style="font-weight:600;color:var(--accent)">18</td><td>Terra argilosa</td><td style="color:var(--text3)">—</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr><td>23/06</td><td>09:45</td><td>ODR-3G42</td><td>Marcos L.</td><td>Libertá — Corte</td><td>Libertá — Aterro B</td><td style="font-weight:600;color:var(--accent)">22</td><td>Terra</td><td style="color:var(--text3)">—</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr><td>22/06</td><td>07:00</td><td>SVV-0H68</td><td>Israel C.</td><td>Giuclube — Corte</td><td>Descarte externo</td><td style="font-weight:600;color:var(--accent)">20</td><td>Entulho</td><td style="font-size:10px;color:var(--text3)">Material com pedra</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr class="tr-total"><td colspan="6">Total do período</td><td style="color:var(--accent)">18.420 m³</td><td colspan="3"></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ ABASTECIMENTO ============================================================ -->
+<div class="page" id="page-abastec">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Abastecimento</div>
+    <button class="btn btn-primary" onclick="toggleInline('form-abastec')"><i class="ti ti-plus"></i>Registrar abastecimento</button>
+    <button class="btn"><i class="ti ti-download"></i>Relatório</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Total litros (período)</div><div class="metric-value">18.240L</div><div class="metric-sub">diesel S10</div></div>
+    <div class="metric"><div class="metric-label">Custo abastecimento</div><div class="metric-value">R$107k</div><div class="metric-sub metric-dn">↑ 4% vs período ant.</div></div>
+    <div class="metric"><div class="metric-label">Abastec. interno</div><div class="metric-value">11.800L</div><div class="metric-sub">64,7% do total</div></div>
+    <div class="metric"><div class="metric-label">Abastec. externo</div><div class="metric-value">6.440L</div><div class="metric-sub">35,3% — postos parceiros</div></div>
+  </div>
+
+  <div class="inline-form card" id="form-abastec" style="border:1px solid var(--accent)">
+    <div class="flex-row" style="margin-bottom:12px"><div style="font-size:13px;font-weight:500"><i class="ti ti-gas-station" style="color:var(--accent)"></i> Registrar abastecimento</div><button class="btn-icon" style="margin-left:auto" onclick="toggleInline('form-abastec')"><i class="ti ti-x"></i></button></div>
+    <div class="g2">
+      <div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>Data</label><input type="date" value="2026-06-23"></div>
+          <div class="form-row" style="flex:1"><label>Fonte</label><select><option>Interno (tanque próprio)</option><option>Externo (posto)</option></select></div>
+        </div>
+        <div class="form-row"><label>Equipamento</label><select><option>Escavadeira 140</option><option>Escavadeira 145</option><option>Escavadeira 220</option><option>Rolo Compact. 01</option><option>ODR-3G42</option><option>PPJ-5430</option></select></div>
+        <div class="form-row"><label>Tipo de combustível</label><select><option>Diesel S10</option><option>Diesel S500</option><option>Gasolina</option><option>Flex</option></select></div>
+      </div>
+      <div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>Litros abastecidos</label><input type="number" placeholder="Ex: 280"></div>
+          <div class="form-row" style="flex:1"><label>Valor R$/litro</label><input type="number" placeholder="Ex: 5.89" step="0.01"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>Horímetro / KM no momento</label><input type="number" placeholder="Ex: 6637.5"></div>
+          <div class="form-row" style="flex:1"><label>Valor total (R$)</label><input type="number" placeholder="Calculado auto." readonly style="background:var(--bg4)"></div>
+        </div>
+        <div class="form-row"><label>Observações</label><textarea placeholder="Opcional..."></textarea></div>
+      </div>
+    </div>
+    <div class="flex-row"><button class="btn btn-primary"><i class="ti ti-check"></i>Salvar abastecimento</button><button class="btn" onclick="toggleInline('form-abastec')">Cancelar</button></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i> Consumo médio (L/h) — máquinas</div>
+      <div class="bar-chart">
+        <div class="bar-row"><span class="bar-label">Escavadeira 220</span><div class="bar-track"><div class="bar-fill" style="width:90%;background:var(--red)"></div></div><span class="bar-val" style="color:var(--red)">22 L/h</span></div>
+        <div class="bar-row"><span class="bar-label">Escavadeira 140</span><div class="bar-track"><div class="bar-fill" style="width:74%;background:var(--yellow)"></div></div><span class="bar-val">18 L/h</span></div>
+        <div class="bar-row"><span class="bar-label">Motoniveladora 170</span><div class="bar-track"><div class="bar-fill" style="width:57%;background:var(--accent)"></div></div><span class="bar-val">14 L/h</span></div>
+        <div class="bar-row"><span class="bar-label">Rolo Compact. 01</span><div class="bar-track"><div class="bar-fill" style="width:49%;background:var(--accent)"></div></div><span class="bar-val">12 L/h</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-bar"></i> Consumo médio (km/L) — caminhões</div>
+      <div class="bar-chart">
+        <div class="bar-row"><span class="bar-label">RBF-5I47</span><div class="bar-track"><div class="bar-fill" style="width:85%;background:var(--green)"></div></div><span class="bar-val" style="color:var(--green)">3,8 km/L</span></div>
+        <div class="bar-row"><span class="bar-label">PPJ-5430</span><div class="bar-track"><div class="bar-fill" style="width:70%;background:var(--accent)"></div></div><span class="bar-val">3,5 km/L</span></div>
+        <div class="bar-row"><span class="bar-label">SVV-0H68</span><div class="bar-track"><div class="bar-fill" style="width:62%;background:var(--accent)"></div></div><span class="bar-val">3,1 km/L</span></div>
+        <div class="bar-row"><span class="bar-label">ODR-3G42</span><div class="bar-track"><div class="bar-fill" style="width:55%;background:var(--yellow)"></div></div><span class="bar-val" style="color:var(--yellow)">2,8 km/L</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-list"></i> Últimos abastecimentos — vinculados ao CC de cada equipamento</div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Equipamento</th><th>CC</th><th>Litros</th><th>Tipo</th><th>R$/L</th><th>Valor total</th><th>Fonte</th><th>Horímetro/KM</th><th>Ações</th></tr></thead>
+      <tbody>
+        <tr><td>23/06</td><td>Escavadeira 140</td><td class="mono" style="color:var(--accent)">#032</td><td>280L</td><td>Diesel S10</td><td>R$5,89</td><td style="font-weight:600;color:var(--accent)">R$1.649</td><td><span class="badge badge-blue">Interno</span></td><td class="mono">6.637,5h</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr><td>23/06</td><td>PPJ-5430</td><td class="mono" style="color:var(--accent)">#012</td><td>320L</td><td>Diesel S10</td><td>R$5,89</td><td style="font-weight:600;color:var(--accent)">R$1.885</td><td><span class="badge badge-blue">Interno</span></td><td class="mono">—</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr><td>22/06</td><td>Rolo Compact. 01</td><td class="mono" style="color:var(--accent)">#029</td><td>150L</td><td>Diesel S10</td><td>R$6,20</td><td style="font-weight:600;color:var(--accent)">R$930</td><td><span class="badge badge-yellow">Externo</span></td><td class="mono">3.120h</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+        <tr><td>20/06</td><td>Motoniveladora 170</td><td class="mono" style="color:var(--accent)">#041</td><td>210L</td><td>Diesel S10</td><td>R$5,89</td><td style="font-weight:600;color:var(--accent)">R$1.237</td><td><span class="badge badge-blue">Interno</span></td><td class="mono">1.240h</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-edit"></i></button><button class="btn-icon"><i class="ti ti-trash"></i></button></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ MANUTENÇÃO ============================================================ -->
+<div class="page" id="page-manutencao">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Manutenção</div>
+    <button class="btn btn-primary" onclick="toggleInline('form-manutencao')"><i class="ti ti-plus"></i>Registrar manutenção</button>
+    <button class="btn"><i class="ti ti-download"></i>Relatório</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Manutenções (período)</div><div class="metric-value">14</div><div class="metric-sub">7 prev. · 7 corretivas</div></div>
+    <div class="metric"><div class="metric-label">Custo manutenção</div><div class="metric-value">R$38k</div><div class="metric-sub metric-dn">↑ 18% vs período ant.</div></div>
+    <div class="metric"><div class="metric-label">Preventivas vencendo</div><div class="metric-value">3</div><div class="metric-sub metric-dn">≤ 100h de horímetro</div></div>
+    <div class="metric"><div class="metric-label">Equipamentos parados</div><div class="metric-value">2</div><div class="metric-sub">em manutenção hoje</div></div>
+  </div>
+
+  <!-- FORM NOVA MANUTENÇÃO -->
+  <div class="inline-form card" id="form-manutencao" style="border:1px solid var(--accent)">
+    <div class="flex-row" style="margin-bottom:14px"><div style="font-size:13px;font-weight:500"><i class="ti ti-tool" style="color:var(--accent)"></i> Registrar manutenção</div><button class="btn-icon" style="margin-left:auto" onclick="toggleInline('form-manutencao')"><i class="ti ti-x"></i></button></div>
+    <div class="g2">
+      <div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>Data do serviço</label><input type="date" value="2026-06-23"></div>
+          <div class="form-row" style="flex:1"><label>Tipo</label><select><option>Preventiva</option><option>Corretiva</option></select></div>
+        </div>
+        <div class="form-row"><label>Equipamento</label><select><option>Escavadeira 140</option><option>Rolo Compact. 01</option><option>Motoniveladora 170</option><option>Retroescavadeira 01</option></select></div>
+        <div class="form-row"><label>Autorizado por</label><select><option>Gustavo Ferreira (Gestor)</option><option>Daniel Rocha (Diretor)</option></select></div>
+        <div class="form-row"><label>Valor do serviço (mão de obra)</label><input type="number" placeholder="R$ 0,00" step="0.01"></div>
+        <div class="form-row"><label>Horímetro no momento</label><input type="number" placeholder="Ex: 6637.5" step="0.1"></div>
+        <div class="form-row"><label>Descrição / Observações</label><textarea placeholder="Descreva o serviço realizado..."></textarea></div>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:500;margin-bottom:10px;color:var(--text2)">Peças utilizadas</div>
+        <div class="info-box" style="margin-bottom:10px"><i class="ti ti-info-circle"></i>Ao lançar uma peça, o sistema dá saída automática do estoque e transfere o custo para o CC do equipamento (PEPS).</div>
+        <div id="pecas-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px">
+          <div style="display:flex;gap:6px;align-items:flex-end;background:var(--bg3);border-radius:var(--radius);padding:8px">
+            <div class="form-row" style="flex:2;margin:0"><label>Peça</label><select><option>— Selecione ou busque —</option><option>FILTRO HIDRAULICO PRINCIPAL ESCAVADEIRAS HYUNDAI</option><option>FILTRO DE OLEO MOTONIVELADORA</option><option>OLEO 15W-40</option><option>FILTRO DE AR DO MOTOR ESCAVADEIRAS</option><option>PINO / TRAVA ESCAVADEIRA 140/150/220</option><option>+ Cadastrar nova peça...</option></select></div>
+            <div class="form-row" style="flex:1;margin:0"><label>Qtd.</label><input type="number" placeholder="1" min="1"></div>
+            <div class="form-row" style="flex:1;margin:0"><label>R$/un (PEPS)</label><input type="text" placeholder="Auto" readonly style="background:var(--bg4)"></div>
+            <button class="btn-icon" style="margin-bottom:0"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+        <button class="btn btn-sm" style="width:100%" onclick="addPecaRow()"><i class="ti ti-plus"></i>Adicionar peça</button>
+        <div class="divider"></div>
+        <div class="form-row"><label>Anexos (NF, recibo, foto)</label>
+          <div style="border:1px dashed var(--border2);border-radius:var(--radius);padding:16px;text-align:center;color:var(--text3);font-size:12px;cursor:pointer"><i class="ti ti-upload" style="display:block;font-size:20px;margin-bottom:4px"></i>Clique ou arraste arquivos aqui</div>
+        </div>
+      </div>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="font-size:12px;color:var(--text3)">Total do serviço: <strong style="color:var(--text)">Mão de obra + Peças</strong></div>
+      <div class="flex-row"><button class="btn btn-primary"><i class="ti ti-check"></i>Salvar manutenção</button><button class="btn" onclick="toggleInline('form-manutencao')">Cancelar</button></div>
+    </div>
+  </div>
+
+  <!-- PREVENTIVA POR HORÍMETRO -->
+  <div class="card">
+    <div class="card-title"><i class="ti ti-clock"></i> Cronograma de manutenção preventiva — por horímetro</div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Equipamento</th><th>Tipo manutenção</th><th>Intervalo</th><th>Horímetro atual</th><th>Horímetro previsto</th><th>Restam</th><th>% do intervalo</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Rolo Compact. 01</td><td>Troca óleo + filtros</td><td>250h</td><td class="mono">3.120h</td><td class="mono" style="color:var(--red)">3.150h</td><td style="color:var(--red);font-weight:600">30h</td><td style="color:var(--red)">98%</td><td><span class="badge badge-red">Crítico</span></td></tr>
+        <tr><td>Escavadeira 140</td><td>Revisão geral</td><td>500h</td><td class="mono">6.637h</td><td class="mono" style="color:var(--yellow)">6.700h</td><td style="color:var(--yellow)">63h</td><td style="color:var(--yellow)">94%</td><td><span class="badge badge-yellow">Alerta</span></td></tr>
+        <tr><td>Motoniveladora 170</td><td>Troca óleo</td><td>250h</td><td class="mono">1.240h</td><td class="mono" style="color:var(--yellow)">1.250h</td><td style="color:var(--yellow)">10h</td><td style="color:var(--red)">96%</td><td><span class="badge badge-red">Crítico</span></td></tr>
+        <tr><td>Escavadeira 145</td><td>Revisão geral</td><td>500h</td><td class="mono">4.210h</td><td class="mono">4.500h</td><td>290h</td><td>58%</td><td><span class="badge badge-green">OK</span></td></tr>
+        <tr><td>Retroescavadeira 01</td><td>Troca óleo + filtros</td><td>250h</td><td class="mono">2.180h</td><td class="mono">2.250h</td><td>70h</td><td>72%</td><td><span class="badge badge-yellow">Alerta</span></td></tr>
+        <tr><td>Pá Carregadeira</td><td>Revisão geral</td><td>500h</td><td class="mono">1.840h</td><td class="mono">2.000h</td><td>160h</td><td>32%</td><td><span class="badge badge-green">OK</span></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div style="margin-top:12px;display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="min-width:160px;color:var(--text3)">Rolo Compact. 01</span><div class="prog-wrap" style="flex:1"><div class="prog-fill" style="width:98%;background:var(--red)"></div></div><span style="color:var(--red);font-weight:600;min-width:36px;text-align:right">98%</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="min-width:160px;color:var(--text3)">Motoniveladora 170</span><div class="prog-wrap" style="flex:1"><div class="prog-fill" style="width:96%;background:var(--red)"></div></div><span style="color:var(--red);font-weight:600;min-width:36px;text-align:right">96%</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="min-width:160px;color:var(--text3)">Escavadeira 140</span><div class="prog-wrap" style="flex:1"><div class="prog-fill" style="width:94%;background:var(--yellow)"></div></div><span style="color:var(--yellow);font-weight:600;min-width:36px;text-align:right">94%</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="min-width:160px;color:var(--text3)">Retroescavadeira 01</span><div class="prog-wrap" style="flex:1"><div class="prog-fill" style="width:72%;background:var(--yellow)"></div></div><span style="color:var(--yellow);font-weight:600;min-width:36px;text-align:right">72%</span></div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:11px"><span style="min-width:160px;color:var(--text3)">Escavadeira 145</span><div class="prog-wrap" style="flex:1"><div class="prog-fill" style="width:58%;background:var(--accent)"></div></div><span style="color:var(--accent);font-weight:600;min-width:36px;text-align:right">58%</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><i class="ti ti-list"></i> Histórico de manutenções realizadas</div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th><th>Mão de obra</th><th>Peças</th><th>Total</th><th>Autorizado por</th><th>Horímetro</th><th>Ações</th></tr></thead>
+      <tbody>
+        <tr><td>15/06</td><td>Escavadeira 140</td><td><span class="badge badge-yellow">Preventiva</span></td><td style="font-size:11px">Troca óleo 15W40 + filtro óleo + filtro ar</td><td>R$350</td><td style="color:var(--accent)">R$1.240</td><td style="font-weight:600">R$1.590</td><td>Gustavo F.</td><td class="mono">6.600h</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+        <tr><td>10/06</td><td>Rolo Compact. 01</td><td><span class="badge badge-red">Corretiva</span></td><td style="font-size:11px">Troca de correia + rolamento danificado</td><td>R$1.800</td><td style="color:var(--accent)">R$2.400</td><td style="font-weight:600">R$4.200</td><td>Daniel R.</td><td class="mono">3.100h</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+        <tr><td>05/06</td><td>Retroescavadeira 01</td><td><span class="badge badge-yellow">Preventiva</span></td><td style="font-size:11px">Troca óleo hidráulico + filtro hidráulico</td><td>R$420</td><td style="color:var(--accent)">R$1.680</td><td style="font-weight:600">R$2.100</td><td>Gustavo F.</td><td class="mono">2.150h</td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ ESTOQUE ============================================================ -->
+<div class="page" id="page-estoque">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Estoque</div>
+    <button class="btn btn-primary" onclick="toggleInline('form-entrada')"><i class="ti ti-package-import"></i>Entrada (compra)</button>
+    <button class="btn" onclick="toggleInline('form-saida')"><i class="ti ti-package-export"></i>Saída (máquina)</button>
+    <button class="btn"><i class="ti ti-download"></i>Relatório</button>
+  </div>
+  <div class="info-box"><i class="ti ti-info-circle"></i>Método <strong>PEPS</strong> — primeiro que entra é o primeiro que sai. Custo permanece no estoque até a saída; ao sair para uma máquina, o custo migra automaticamente para o centro de custo daquele equipamento.</div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Itens cadastrados</div><div class="metric-value">67</div><div class="metric-sub">peças, óleos, pneus...</div></div>
+    <div class="metric"><div class="metric-label">Valor em estoque</div><div class="metric-value">R$83k</div><div class="metric-sub">custo PEPS acumulado</div></div>
+    <div class="metric"><div class="metric-label">Itens críticos</div><div class="metric-value">3</div><div class="metric-sub metric-dn">abaixo do estoque mínimo</div></div>
+    <div class="metric"><div class="metric-label">Saídas (período)</div><div class="metric-value">R$18k</div><div class="metric-sub">→ CCs das máquinas</div></div>
+  </div>
+
+  <!-- FORM ENTRADA -->
+  <div class="inline-form card" id="form-entrada" style="border:1px solid var(--green)">
+    <div class="flex-row" style="margin-bottom:12px"><div style="font-size:13px;font-weight:500;color:var(--green)"><i class="ti ti-package-import"></i> Entrada de estoque (compra)</div><button class="btn-icon" style="margin-left:auto" onclick="toggleInline('form-entrada')"><i class="ti ti-x"></i></button></div>
+    <div class="g2">
+      <div>
+        <div class="form-row"><label>Data da compra</label><input type="date" value="2026-06-23"></div>
+        <div class="form-row"><label>Fornecedor</label><select><option>BRAMAK</option><option>Outro / Cadastrar fornecedor</option></select></div>
+        <div class="form-row"><label>Produto</label><select><option>— Selecione —</option><option>OLEO 15W-40</option><option>FILTRO HIDRAULICO PRINCIPAL ESCAVADEIRAS HYUNDAI</option><option>DENTE ESCAVADEIRA 140/150</option><option>PINO / TRAVA ESCAVADEIRA 140/150/220</option><option>PNEU 275/80 - 22.5 MISTO</option><option>+ Cadastrar novo produto...</option></select></div>
+      </div>
+      <div>
+        <div style="display:flex;gap:8px">
+          <div class="form-row" style="flex:1"><label>Quantidade</label><input type="number" placeholder="Ex: 12"></div>
+          <div class="form-row" style="flex:1"><label>Valor unitário (R$)</label><input type="number" placeholder="0,00" step="0.01"></div>
+          <div class="form-row" style="flex:1"><label>Valor total</label><input type="text" placeholder="Calculado auto." readonly style="background:var(--bg4)"></div>
+        </div>
+        <div class="form-row"><label>Nota fiscal / Documento</label><div style="border:1px dashed var(--border2);border-radius:var(--radius);padding:10px;text-align:center;color:var(--text3);font-size:11px;cursor:pointer"><i class="ti ti-upload"></i> Anexar NF</div></div>
+      </div>
+    </div>
+    <div class="flex-row"><button class="btn btn-primary" style="background:var(--green);border-color:var(--green)"><i class="ti ti-check"></i>Registrar entrada</button><button class="btn" onclick="toggleInline('form-entrada')">Cancelar</button></div>
+  </div>
+
+  <!-- FORM SAÍDA -->
+  <div class="inline-form card" id="form-saida" style="border:1px solid var(--yellow)">
+    <div class="flex-row" style="margin-bottom:12px"><div style="font-size:13px;font-weight:500;color:var(--yellow)"><i class="ti ti-package-export"></i> Saída de estoque (para máquina)</div><button class="btn-icon" style="margin-left:auto" onclick="toggleInline('form-saida')"><i class="ti ti-x"></i></button></div>
+    <div class="g2">
+      <div>
+        <div class="form-row"><label>Data</label><input type="date" value="2026-06-23"></div>
+        <div class="form-row"><label>Equipamento (centro de custo)</label><select><option>Escavadeira 140 — CC#032</option><option>Escavadeira 145 — CC#040</option><option>Rolo Compact. 01 — CC#029</option><option>PPJ-5430 — CC#012</option></select></div>
+        <div class="form-row"><label>Vinculado à manutenção?</label><select><option>Não (saída avulsa)</option><option>Sim — #OS 0015: Troca óleo (15/06)</option></select></div>
+      </div>
+      <div>
+        <div class="form-row"><label>Produto</label><select><option>OLEO 15W-40 (Estoque: 12 un · R$288,90/un — PEPS)</option><option>FILTRO HIDRAULICO PRINCIPAL — 5 un disponíveis</option></select></div>
+        <div class="form-row"><label>Quantidade</label><input type="number" placeholder="Ex: 3"></div>
+        <div style="background:var(--bg3);border-radius:var(--radius);padding:10px 12px;font-size:11px">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--text3)">Custo unitário (PEPS)</span><span>R$288,90</span></div>
+          <div style="display:flex;justify-content:space-between;font-weight:600"><span style="color:var(--text3)">Custo total → CC da máquina</span><span style="color:var(--accent)">R$866,70</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="flex-row"><button class="btn btn-primary" style="background:var(--yellow);border-color:var(--yellow);color:#000"><i class="ti ti-check"></i>Registrar saída</button><button class="btn" onclick="toggleInline('form-saida')">Cancelar</button></div>
+  </div>
+
+  <div class="tab-bar" id="estoque-tabs">
+    <div class="tab-item active" onclick="swEstoqueTab('produtos',this)">Produtos</div>
+    <div class="tab-item" onclick="swEstoqueTab('movimentacoes',this)">Movimentações</div>
+    <div class="tab-item" onclick="swEstoqueTab('criticos',this)">Necessidade de compra <span class="badge badge-red" style="margin-left:4px">3</span></div>
+  </div>
+
+  <div id="estoque-tab-produtos">
+    <div class="card">
+      <div class="flex-row" style="margin-bottom:12px">
+        <input type="text" placeholder="Buscar produto..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none">
+        <select style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none"><option>Todas as categorias</option><option>Filtros</option><option>Óleos</option><option>Pneus</option><option>Peças de desgaste</option></select>
+        <button class="btn btn-primary btn-sm"><i class="ti ti-plus"></i>Cadastrar produto</button>
+      </div>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Cód.</th><th>Produto</th><th>Estoque atual</th><th>Estoque mínimo</th><th>Custo PEPS (R$/un)</th><th>Valor total</th><th>Observações</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>
+          <tr><td class="mono" style="color:var(--accent)">12</td><td>DENTE ESCAVADEIRA 140/150</td><td>27</td><td>10</td><td>R$121,00</td><td>R$3.267</td><td style="font-size:10px;color:var(--text3)">—</td><td><span class="badge badge-green">OK</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-chart-line"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">13</td><td>DENTE DA ESCAVADEIRA 145</td><td>10</td><td>5</td><td>R$150,00</td><td>R$1.500</td><td style="font-size:10px;color:var(--text3)">—</td><td><span class="badge badge-green">OK</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-chart-line"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">45</td><td>FILTRO HIDRAULICO DRENO ESCAVADEIRAS HYUNDAI</td><td>4</td><td>1</td><td>R$—</td><td>R$—</td><td style="font-size:10px;color:var(--text3)">31K6-01320</td><td><span class="badge badge-green">OK</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-chart-line"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr style="background:rgba(239,68,68,0.05)"><td class="mono" style="color:var(--accent)">32</td><td>FILTRO DE AR DO MOTOR PPJ-5430 / RBF-5I47</td><td style="color:var(--red);font-weight:600">0</td><td>1</td><td>R$—</td><td>R$0</td><td style="font-size:10px;color:var(--text3)">—</td><td><span class="badge badge-red">Sem estoque</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-chart-line"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">4</td><td>BALDE DE GRAXA</td><td>12</td><td>3</td><td>R$509,83</td><td>R$6.118</td><td style="font-size:10px;color:var(--text3)">—</td><td><span class="badge badge-green">OK</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-chart-line"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">9</td><td>OLEO 15W-40</td><td>12</td><td>1</td><td>R$288,90</td><td>R$3.467</td><td style="font-size:10px;color:var(--text3)">—</td><td><span class="badge badge-green">OK</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-chart-line"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr style="background:rgba(245,158,11,0.05)"><td class="mono" style="color:var(--accent)">—</td><td>PNEU 275/80 - 22.5 MISTO</td><td style="color:var(--yellow);font-weight:600">2</td><td>1</td><td>R$2.182,00</td><td>R$4.364</td><td style="font-size:10px;color:var(--text3)">4 saídas no período</td><td><span class="badge badge-yellow">Baixo</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-chart-line"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="estoque-tab-movimentacoes" style="display:none">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-arrow-up-down"></i> Movimentações do período</div>
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Data</th><th>Tipo</th><th>Produto</th><th>Qtd.</th><th>R$/un</th><th>Total</th><th>Destino/Origem</th></tr></thead>
+        <tbody>
+          <tr><td>23/05</td><td><span class="badge badge-green">Entrada</span></td><td>PINO / TRAVA ESCAVADEIRA 140/150/220</td><td>+35</td><td>R$50,00</td><td style="color:var(--green)">+R$1.750</td><td>Fornecedor: BRAMAK</td></tr>
+          <tr><td>23/05</td><td><span class="badge badge-green">Entrada</span></td><td>OLEO 15W-40</td><td>+12</td><td>R$288,90</td><td style="color:var(--green)">+R$3.467</td><td>Fornecedor: CADASTRO FROTA</td></tr>
+          <tr><td>15/05</td><td><span class="badge badge-yellow">Saída</span></td><td>PNEU 275/80 - 22.5 MISTO</td><td>-4</td><td>R$2.182,00</td><td style="color:var(--yellow)">-R$8.728</td><td>→ SVV-0H68 (CC#013)</td></tr>
+          <tr><td>15/05</td><td><span class="badge badge-yellow">Saída</span></td><td>PNEU 12.5/80 - 18</td><td>-2</td><td>R$1.830,00</td><td style="color:var(--yellow)">-R$3.660</td><td>→ RETRO 01 (CC#030)</td></tr>
+          <tr><td>22/05</td><td><span class="badge badge-yellow">Saída</span></td><td>BALDE DE GRAXA</td><td>-1</td><td>R$509,87</td><td style="color:var(--yellow)">-R$510</td><td>→ ESCAVADEIRA 150 (CC#039)</td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="estoque-tab-criticos" style="display:none">
+    <div class="danger-box" style="margin-bottom:12px"><i class="ti ti-alert-triangle"></i>3 produtos com necessidade imediata de compra. Estoque abaixo do mínimo configurado.</div>
+    <div class="card">
+      <div class="table-wrap">
+      <table>
+        <thead><tr><th>Produto</th><th>Estoque atual</th><th>Estoque mínimo</th><th>Sugestão de compra</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>FILTRO DE AR DO MOTOR PPJ-5430 / RBF-5I47</td><td style="color:var(--red);font-weight:600">0</td><td>1</td><td>Comprar mínimo 2</td><td><span class="badge badge-red">Sem estoque</span></td></tr>
+          <tr><td>PNEU 275/80 - 22.5 MISTO</td><td style="color:var(--yellow);font-weight:600">2</td><td>1</td><td>Monitorar (baixo)</td><td><span class="badge badge-yellow">Baixo</span></td></tr>
+          <tr><td>FILTRO DE COMBUSTIVEL MOTONIVELADORA 865</td><td style="color:var(--red);font-weight:600">0</td><td>1</td><td>Comprar mínimo 2</td><td><span class="badge badge-red">Sem estoque</span></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ SEGUROS ============================================================ -->
+<div class="page" id="page-seguros">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Seguros da frota</div>
+    <button class="btn btn-primary"><i class="ti ti-plus"></i>Nova apólice</button>
+    <button class="btn"><i class="ti ti-download"></i>Relatório</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Ativos segurados</div><div class="metric-value">43</div><div class="metric-sub">máquinas, caminhões, carros, vans</div></div>
+    <div class="metric"><div class="metric-label">Prêmio anual total</div><div class="metric-value">R$138k</div><div class="metric-sub">todas as apólices ativas</div></div>
+    <div class="metric"><div class="metric-label">Vencendo em 6 meses</div><div class="metric-value metric-dn">3</div><div class="metric-sub">Retro 03, Retro 04, Rolo 02</div></div>
+    <div class="metric"><div class="metric-label">Sinistros abertos</div><div class="metric-value">0</div></div>
+  </div>
+
+  <div class="danger-box"><i class="ti ti-alert-triangle"></i><div><strong>RETRO 03 e RETRO 04</strong> vencem em 24/10/2026 — 5 meses. <strong>ROLO 02</strong> vence em 24/10/2026. Renove com antecedência. Automação de e-mail configurável no painel de integrações.</div></div>
+
+  <div class="tab-bar">
+    <div class="tab-item active" onclick="swSegTab('apolices',this)">Apólices</div>
+    <div class="tab-item" onclick="swSegTab('coberturas',this)">Coberturas detalhadas</div>
+    <div class="tab-item" onclick="swSegTab('consulta',this)">Consulta por veículo</div>
+  </div>
+
+  <!-- ABA APÓLICES -->
+  <div id="seg-tab-apolices">
+    <div class="card">
+      <div class="flex-row" style="margin-bottom:12px">
+        <input type="text" placeholder="Buscar por placa ou equipamento..." style="flex:1;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none">
+        <select style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none"><option>Todas as seguradoras</option><option>Tokio Marine</option><option>Pottencial</option><option>Porto Seguro</option><option>Allianz</option></select>
+        <select style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none"><option>Todas as categorias</option><option>Máquina</option><option>Caminhão</option><option>Carro/Van</option></select>
+      </div>
+      <div class="table-wrap">
+      <table style="min-width:900px">
+        <thead><tr><th>Cód.</th><th>Placa / ID</th><th>Categoria</th><th>Descrição</th><th>Seguradora</th><th>Apólice</th><th>Início</th><th>Fim</th><th>Meses restantes</th><th>Prêmio anual</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>
+          <tr><td class="mono" style="color:var(--accent)">32</td><td>ESCAVADEIRA 140</td><td><span class="badge badge-purple">Máquina</span></td><td style="font-size:11px">Hyundai R140 LC-9SB</td><td>Pottencial</td><td class="mono" style="font-size:10px">03069202699...</td><td>12/03/26</td><td>10/03/27</td><td>10</td><td>R$3.518</td><td><span class="badge badge-green">Vigente</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">40</td><td>ESCAVADEIRA 145</td><td><span class="badge badge-purple">Máquina</span></td><td style="font-size:11px">Hyundai 145C EVO</td><td>Pottencial</td><td class="mono" style="font-size:10px">03069202699...</td><td>12/03/26</td><td>10/03/27</td><td>10</td><td>R$3.004</td><td><span class="badge badge-green">Vigente</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">22</td><td>RETRO 03</td><td><span class="badge badge-purple">Máquina</span></td><td style="font-size:11px">NH B110C RetroEscavadeira</td><td>Pottencial</td><td class="mono" style="font-size:10px">030692025...</td><td>24/10/25</td><td style="color:var(--yellow)">24/10/26</td><td style="color:var(--yellow);font-weight:600">5</td><td>R$1.602</td><td><span class="badge badge-yellow">Atenção</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">23</td><td>RETRO 04</td><td><span class="badge badge-purple">Máquina</span></td><td style="font-size:11px">NH B110C RetroEscavadeira</td><td>Pottencial</td><td class="mono" style="font-size:10px">030692025...</td><td>24/10/25</td><td style="color:var(--yellow)">24/10/26</td><td style="color:var(--yellow);font-weight:600">5</td><td>R$1.602</td><td><span class="badge badge-yellow">Atenção</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">14</td><td>ODR-3G42</td><td><span class="badge badge-yellow">Caminhão</span></td><td style="font-size:11px">MB Axor 2544</td><td>Tokio Marine</td><td class="mono" style="font-size:10px">38446569</td><td>17/04/26</td><td>17/04/27</td><td>11</td><td>R$11.006</td><td><span class="badge badge-green">Vigente</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">6</td><td>RUQ-5I34</td><td><span class="badge badge-yellow">Caminhão</span></td><td style="font-size:11px">MB Axor 2644</td><td>Tokio Marine</td><td class="mono" style="font-size:10px">38446569</td><td>17/04/26</td><td>17/04/27</td><td>11</td><td>R$13.629</td><td><span class="badge badge-green">Vigente</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">25</td><td>RVO-3C49</td><td><span class="badge badge-yellow">Caminhão</span></td><td style="font-size:11px">MB Accelo 1016</td><td>Allianz</td><td class="mono" style="font-size:10px">5177202664...</td><td>10/03/26</td><td>10/03/27</td><td>10</td><td>R$9.036</td><td><span class="badge badge-green">Vigente</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+          <tr><td class="mono" style="color:var(--accent)">9</td><td>QRB-4970</td><td><span class="badge badge-blue">Carro</span></td><td style="font-size:11px">Fiat Strada Working 2018</td><td>Tokio Marine</td><td class="mono" style="font-size:10px">38446569</td><td>17/04/26</td><td>17/04/27</td><td>11</td><td>R$2.028</td><td><span class="badge badge-green">Vigente</span></td><td style="display:flex;gap:3px"><button class="btn-icon"><i class="ti ti-eye"></i></button><button class="btn-icon"><i class="ti ti-edit"></i></button></td></tr>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA COBERTURAS -->
+  <div id="seg-tab-coberturas" style="display:none">
+    <div class="card">
+      <div class="flex-row" style="margin-bottom:12px">
+        <div style="font-size:13px;font-weight:500">Coberturas por equipamento</div>
+        <select style="padding:6px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none"><option>ODR-3G42</option><option>Escavadeira 140</option><option>QRB-4970</option></select>
+      </div>
+      <div class="g2">
+        <div>
+          <div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Coberturas principais</div>
+          <div class="table-wrap">
+          <table style="font-size:11px">
+            <thead><tr><th>Cobertura</th><th>LMI</th><th>Franquia</th></tr></thead>
+            <tbody>
+              <tr><td>Colisão</td><td>VRM – 100%</td><td>R$13.673</td></tr>
+              <tr><td>Incêndio</td><td>VRM – 100%</td><td>R$13.673</td></tr>
+              <tr><td>Roubo / Furto</td><td>VRM – 100%</td><td>R$13.673</td></tr>
+              <tr><td>Danos Materiais</td><td>R$200.000</td><td>—</td></tr>
+              <tr><td>Danos Corporais</td><td>R$200.000</td><td>—</td></tr>
+              <tr><td>Danos Morais</td><td>R$50.000</td><td>—</td></tr>
+              <tr><td>APP Morte</td><td>R$20.000</td><td>—</td></tr>
+              <tr><td>APP Invalidez</td><td>R$20.000</td><td>—</td></tr>
+              <tr><td>Assistência 24h</td><td>Completa</td><td>—</td></tr>
+              <tr><td>Reboque (pane)</td><td>1.200 km</td><td>—</td></tr>
+              <tr><td>Reboque (sinistro)</td><td>1.600 km</td><td>—</td></tr>
+            </tbody>
+          </table>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Vidros / detalhes</div>
+          <div class="table-wrap">
+          <table style="font-size:11px">
+            <thead><tr><th>Item</th><th>Status</th><th>Franquia</th></tr></thead>
+            <tbody>
+              <tr><td>Parabrisa</td><td><span class="badge badge-green">Coberto</span></td><td>R$425</td></tr>
+              <tr><td>Lateral</td><td><span class="badge badge-green">Coberto</span></td><td>R$190</td></tr>
+              <tr><td>Vigia/Traseiro</td><td><span class="badge badge-green">Coberto</span></td><td>R$145</td></tr>
+              <tr><td>Farol Halógeno</td><td><span class="badge badge-gray">Básico</span></td><td>R$760</td></tr>
+              <tr><td>Carga e Descarga</td><td><span class="badge badge-green">Contratado</span></td><td>—</td></tr>
+              <tr><td>Danos Elétricos</td><td><span class="badge badge-red">Não contrat.</span></td><td>—</td></tr>
+            </tbody>
+          </table>
+          </div>
+          <div style="margin-top:10px;font-size:10px;color:var(--text3)">
+            <div><strong>LMI:</strong> Limite Máximo de Indenização</div>
+            <div><strong>VRM:</strong> Valor de Mercado do Veículo (Tabela FIPE)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ABA CONSULTA -->
+  <div id="seg-tab-consulta" style="display:none">
+    <div class="card">
+      <div class="flex-row" style="margin-bottom:14px">
+        <div style="font-size:12px;font-weight:500;color:var(--text2)">Consulta rápida por ativo:</div>
+        <select style="padding:7px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:12px;outline:none;flex:1"><option>QRB-4970 — Fiat Strada</option><option>ODR-3G42 — MB Axor</option><option>Escavadeira 140</option></select>
+      </div>
+      <div class="g2">
+        <div>
+          <div class="detail-section-title" style="margin-bottom:8px">Informações do ativo</div>
+          <div class="field-grid" style="margin-bottom:12px">
+            <div class="field"><div class="field-label">Categoria</div><div class="field-value">Carro</div></div>
+            <div class="field"><div class="field-label">Descrição</div><div class="field-value">Strada Working</div></div>
+            <div class="field"><div class="field-label">Marca</div><div class="field-value">Fiat</div></div>
+            <div class="field"><div class="field-label">Modelo</div><div class="field-value">Strada Working</div></div>
+            <div class="field"><div class="field-label">Ano</div><div class="field-value">2018</div></div>
+            <div class="field"><div class="field-label">Código FIPE</div><div class="field-value">001431-1</div></div>
+          </div>
+        </div>
+        <div>
+          <div class="detail-section-title" style="margin-bottom:8px">Informações do seguro</div>
+          <div class="field-grid">
+            <div class="field"><div class="field-label">Apólice</div><div class="field-value mono">38446569</div></div>
+            <div class="field"><div class="field-label">Seguradora</div><div class="field-value">Tokio Marine</div></div>
+            <div class="field"><div class="field-label">Corretora</div><div class="field-value">Sicoob</div></div>
+            <div class="field"><div class="field-label">Prêmio anual</div><div class="field-value accent">R$2.028,47</div></div>
+            <div class="field"><div class="field-label">Início</div><div class="field-value">17/04/2026</div></div>
+            <div class="field"><div class="field-label">Fim</div><div class="field-value">17/04/2027</div></div>
+            <div class="field"><div class="field-label">Meses restantes</div><div class="field-value success">11 meses</div></div>
+            <div class="field"><div class="field-label">Status</div><div class="field-value"><span class="badge badge-green">Vigente</span></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ FINANCEIRO ============================================================ -->
+<div class="page" id="page-financeiro">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Financeiro da frota</div>
+    <button class="btn"><i class="ti ti-download"></i>Exportar relatório</button>
+  </div>
+  <div class="metrics">
+    <div class="metric"><div class="metric-label">Receita total (período)</div><div class="metric-value" style="color:var(--green)">R$312k</div><div class="metric-sub metric-up">↑ 8%</div></div>
+    <div class="metric"><div class="metric-label">Custo operacional</div><div class="metric-value" style="color:var(--red)">R$148k</div><div class="metric-sub">47,4% da receita</div></div>
+    <div class="metric"><div class="metric-label">Margem operacional</div><div class="metric-value" style="color:var(--green)">52,6%</div><div class="metric-sub metric-up">↑ 2,1pp vs período ant.</div></div>
+    <div class="metric"><div class="metric-label">Equip. com margem positiva</div><div class="metric-value">34 / 40</div><div class="metric-sub">6 com custo > receita</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title"><i class="ti ti-chart-donut"></i> Composição dos custos</div>
+      <div class="bar-chart">
+        <div class="bar-row"><span class="bar-label">Combustível</span><div class="bar-track"><div class="bar-fill" style="width:72%;background:var(--accent)"></div></div><span class="bar-val" style="color:var(--accent)">72% · R$107k</span></div>
+        <div class="bar-row"><span class="bar-label">Manutenção</span><div class="bar-track"><div class="bar-fill" style="width:26%;background:var(--yellow)"></div></div><span class="bar-val" style="color:var(--yellow)">26% · R$38k</span></div>
+        <div class="bar-row"><span class="bar-label">Seguros (rateio)</span><div class="bar-track"><div class="bar-fill" style="width:11%;background:var(--green)"></div></div><span class="bar-val" style="color:var(--green)">11% · R$16k</span></div>
+        <div class="bar-row"><span class="bar-label">Peças (estoque)</span><div class="bar-track"><div class="bar-fill" style="width:12%;background:var(--purple)"></div></div><span class="bar-val" style="color:var(--purple)">12% · R$18k</span></div>
+        <div class="bar-row"><span class="bar-label">Outros</span><div class="bar-track"><div class="bar-fill" style="width:4%;background:var(--text3)"></div></div><span class="bar-val">4% · R$6k</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-trending-up"></i> Evolução mensal — Receita × Custo (R$ mil)</div>
+      <div style="display:flex;align-items:flex-end;gap:8px;height:90px;margin-top:4px">
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:100%;background:var(--accent);border-radius:3px 3px 0 0;height:52px;opacity:.5"></div>
+          <div style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:28px;opacity:.6"></div>
+          <span style="font-size:9px;color:var(--text3)">Jan</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:100%;background:var(--accent);border-radius:3px 3px 0 0;height:56px;opacity:.5"></div>
+          <div style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:30px;opacity:.6"></div>
+          <span style="font-size:9px;color:var(--text3)">Fev</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:100%;background:var(--accent);border-radius:3px 3px 0 0;height:60px;opacity:.5"></div>
+          <div style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:32px;opacity:.6"></div>
+          <span style="font-size:9px;color:var(--text3)">Mar</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:100%;background:var(--accent);border-radius:3px 3px 0 0;height:58px;opacity:.5"></div>
+          <div style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:34px;opacity:.6"></div>
+          <span style="font-size:9px;color:var(--text3)">Abr</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:100%;background:var(--accent);border-radius:3px 3px 0 0;height:62px;opacity:.5"></div>
+          <div style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:30px;opacity:.6"></div>
+          <span style="font-size:9px;color:var(--text3)">Mai</span>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+          <div style="width:100%;background:var(--accent);border-radius:3px 3px 0 0;height:72px"></div>
+          <div style="width:100%;background:var(--red);border-radius:3px 3px 0 0;height:36px"></div>
+          <span style="font-size:9px;color:var(--text3)">Jun</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:6px;font-size:11px">
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--accent);border-radius:2px"></span>Receita</span>
+        <span style="display:flex;align-items:center;gap:4px"><span style="width:10px;height:10px;background:var(--red);border-radius:2px"></span>Custo</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="flex-row" style="margin-bottom:12px">
+      <div style="font-size:13px;font-weight:500">Resultado por equipamento — centros de custo</div>
+      <select style="padding:5px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:11px;outline:none"><option>Todos os equipamentos</option><option>Apenas máquinas</option><option>Apenas caminhões</option></select>
+    </div>
+    <div class="table-wrap">
+    <table style="min-width:800px">
+      <thead><tr><th>Equipamento</th><th>CC</th><th>Combustível</th><th>Manutenção</th><th>Peças</th><th>Seguro (rateio)</th><th>Custo total</th><th>Receita</th><th>Margem</th><th>KPI principal</th></tr></thead>
+      <tbody>
+        <tr><td>Escavadeira 140</td><td class="mono" style="color:var(--accent)">#032</td><td>R$8.400</td><td>R$1.590</td><td>R$1.240</td><td>R$293</td><td>R$11.523</td><td>R$23.936</td><td style="color:var(--green);font-weight:600">51,8%</td><td>R$320/h · 74,8h</td></tr>
+        <tr><td>Escavadeira 145</td><td class="mono" style="color:var(--accent)">#040</td><td>R$6.200</td><td>R$800</td><td>R$600</td><td>R$250</td><td>R$7.850</td><td>R$18.240</td><td style="color:var(--green);font-weight:600">57,0%</td><td>R$320/h · 57h</td></tr>
+        <tr><td>Escavadeira 220</td><td class="mono" style="color:var(--accent)">#037</td><td>R$9.800</td><td>R$600</td><td>R$200</td><td>R$310</td><td>R$10.910</td><td>R$19.760</td><td style="color:var(--green);font-weight:600">44,8%</td><td>R$380/h · 52h</td></tr>
+        <tr><td>Rolo Compact. 01</td><td class="mono" style="color:var(--accent)">#029</td><td>R$3.600</td><td>R$4.200</td><td>R$2.400</td><td>R$74</td><td>R$10.274</td><td>R$12.600</td><td style="color:var(--yellow);font-weight:600">18,5%</td><td>R$1.800/dia · 7 diárias</td></tr>
+        <tr><td>Motoniveladora 170</td><td class="mono" style="color:var(--accent)">#041</td><td>R$5.200</td><td>R$900</td><td>R$800</td><td>R$402</td><td>R$7.302</td><td>R$14.800</td><td style="color:var(--green);font-weight:600">50,7%</td><td>R$370/h · 40h</td></tr>
+        <tr><td>ODR-3G42</td><td class="mono" style="color:var(--accent)">#014</td><td>R$7.200</td><td>R$1.200</td><td>R$280</td><td>R$917</td><td>R$9.597</td><td>R$24.320</td><td style="color:var(--green);font-weight:600">60,5%</td><td>R$2,10/m³ · 4.820m³</td></tr>
+        <tr><td>PPJ-5430</td><td class="mono" style="color:var(--accent)">#012</td><td>R$6.800</td><td>R$800</td><td>R$150</td><td>R$507</td><td>R$8.257</td><td>R$18.432</td><td style="color:var(--green);font-weight:600">55,2%</td><td>R$1,75/m³ · 4.060m³</td></tr>
+        <tr style="background:rgba(239,68,68,0.06)"><td>SVV-0H68</td><td class="mono" style="color:var(--accent)">#013</td><td>R$0</td><td>R$0</td><td>R$8.728</td><td>R$661</td><td>R$9.389</td><td>R$0</td><td style="color:var(--red);font-weight:600">–100%</td><td>Parado — custo fixo</td></tr>
+        <tr class="tr-total"><td colspan="6">Total</td><td>R$148k</td><td style="color:var(--green)">R$312k</td><td style="color:var(--green)">52,6%</td><td></td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ RANK ============================================================ -->
+<div class="page" id="page-rank">
+  <div class="flex-row">
+    <div class="flex-1" style="font-size:14px;font-weight:500">Rank de motoristas <span class="badge badge-purple" style="margin-left:4px">Gestor de frota</span></div>
+    <button class="btn btn-primary"><i class="ti ti-edit"></i>Editar ranking</button>
+    <button class="btn"><i class="ti ti-download"></i>Exportar</button>
+  </div>
+  <div class="info-box"><i class="ti ti-trophy"></i>Ranking atualizado manualmente pelo Gestor de Frota. Os critérios podem incluir: produtividade (m³/dia), pontualidade, ocorrências, conservação do veículo e feedback dos encarregados.</div>
+  <div class="g2">
+    <div>
+      <div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:10px">Ranking — período Junho / 2026</div>
+      <div class="rank-item">
+        <div class="rank-num gold">1º</div>
+        <div class="rank-avatar" style="background:var(--yellow-bg);color:var(--yellow)">ML</div>
+        <div class="rank-info"><div class="rank-name">Marcos Lima</div><div class="rank-sub">4.820 m³ · ODR-3G42 · 0 ocorrências</div></div>
+        <div style="text-align:right"><div class="rank-score">98 pts</div><div style="font-size:10px;color:var(--text3)">Pontuação</div></div>
+      </div>
+      <div class="rank-item">
+        <div class="rank-num silver">2º</div>
+        <div class="rank-avatar" style="background:var(--green-bg);color:var(--green)">RS</div>
+        <div class="rank-info"><div class="rank-name">Roberto Santos</div><div class="rank-sub">4.060 m³ · PPJ-5430 · 0 ocorrências</div></div>
+        <div style="text-align:right"><div class="rank-score">91 pts</div><div style="font-size:10px;color:var(--text3)">Pontuação</div></div>
+      </div>
+      <div class="rank-item">
+        <div class="rank-num bronze">3º</div>
+        <div class="rank-avatar" style="background:var(--accent-bg);color:var(--accent)">IC</div>
+        <div class="rank-info"><div class="rank-name">Israel Candido</div><div class="rank-sub">3.480 m³ · RBF-5I47 · 1 ocorrência</div></div>
+        <div style="text-align:right"><div class="rank-score">84 pts</div><div style="font-size:10px;color:var(--text3)">Pontuação</div></div>
+      </div>
+      <div class="rank-item">
+        <div class="rank-num" style="color:var(--text3)">4º</div>
+        <div class="rank-avatar" style="background:var(--purple-bg);color:var(--purple)">RB</div>
+        <div class="rank-info"><div class="rank-name">Railan Bandeira</div><div class="rank-sub">3.140 m³ · SVV-0H68 · 0 ocorrências</div></div>
+        <div style="text-align:right"><div class="rank-score">78 pts</div><div style="font-size:10px;color:var(--text3)">Pontuação</div></div>
+      </div>
+      <div class="rank-item">
+        <div class="rank-num" style="color:var(--text3)">5º</div>
+        <div class="rank-avatar" style="background:var(--bg4);color:var(--text3)">WF</div>
+        <div class="rank-info"><div class="rank-name">Wellington Franco</div><div class="rank-sub">Operador de máquina</div></div>
+        <div style="text-align:right"><div class="rank-score">72 pts</div><div style="font-size:10px;color:var(--text3)">Pontuação</div></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="card">
+        <div class="card-title"><i class="ti ti-star"></i>Critérios do ranking</div>
+        <div style="font-size:11px;display:flex;flex-direction:column;gap:6px">
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Produtividade (m³/dia)</span><span style="font-weight:500">40 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Pontualidade</span><span style="font-weight:500">20 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Zero ocorrências</span><span style="font-weight:500">20 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text3)">Conservação do veículo</span><span style="font-weight:500">10 pts</span></div>
+          <div style="display:flex;justify-content:space-between;padding:5px 0"><span style="color:var(--text3)">Feedback do encarregado</span><span style="font-weight:500">10 pts</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title"><i class="ti ti-chart-bar"></i>Histórico de rankings</div>
+        <div style="font-size:11px;display:flex;flex-direction:column;gap:5px">
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Maio / 2026</span><span>1º Marcos Lima · 2º Roberto S.</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Abril / 2026</span><span>1º Roberto S. · 2º Israel C.</span></div>
+          <div style="display:flex;justify-content:space-between"><span style="color:var(--text3)">Março / 2026</span><span>1º Marcos Lima · 2º Railan B.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- ============================================================ JAVASCRIPT ============================================================ -->
+<script>
+/* ---------- AUTH ---------- */
+function doLogin() {
+  const email = document.getElementById('login-email').value;
+  const pass = document.getElementById('login-pass').value;
+  if (!email || !pass) { alert('Preencha e-mail e senha.'); return; }
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const name = email.includes('gestor') ? 'Gustavo Ferreira' : email.includes('diretor') ? 'Daniel Rocha' : 'Railan Bandeira';
+  const role = email.includes('gestor') ? 'Gestor de frota' : email.includes('diretor') ? 'Diretor' : 'Encarregado';
+  const initials = name.split(' ').map(n=>n[0]).slice(0,2).join('');
+  document.getElementById('sidebar-name').textContent = name;
+  document.getElementById('sidebar-role').textContent = role;
+  document.getElementById('sidebar-avatar').textContent = initials;
+}
+function doLogout() {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && document.getElementById('login-screen').style.display !== 'none') doLogin(); });
+
+/* ---------- NAVIGATION ---------- */
+const pageTitles = {
+  dashboard: 'Dashboard', planilha: 'Planilha orçamentária', horamaq: 'Hora máquina — SIF',
+  viagens: 'Viagens', abastec: 'Abastecimento', manutencao: 'Manutenção',
+  estoque: 'Estoque', seguros: 'Seguros da frota', financeiro: 'Financeiro da frota',
+  rank: 'Rank de motoristas', equipamentos: 'Equipamentos', colaboradores: 'Colaboradores',
+  loteamentos: 'Loteamentos', usuarios: 'Usuários'
+};
+function nav(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('page-title').textContent = pageTitles[id] || id;
+}
+
+/* ---------- PERIOD NAVIGATION ---------- */
+const periods = [
+  { main: 'Janeiro / 2026', dates: '26/12/2025 — 25/01/2026' },
+  { main: 'Fevereiro / 2026', dates: '26/01/2026 — 25/02/2026' },
+  { main: 'Março / 2026', dates: '26/02/2026 — 25/03/2026' },
+  { main: 'Abril / 2026', dates: '26/03/2026 — 25/04/2026' },
+  { main: 'Maio / 2026', dates: '26/04/2026 — 25/05/2026' },
+  { main: 'Junho / 2026', dates: '26/05/2026 — 25/06/2026' },
+];
+let periodIdx = 5;
+function navPeriod(dir) {
+  periodIdx = Math.max(0, Math.min(periods.length - 1, periodIdx + dir));
+  const p = periods[periodIdx];
+  document.getElementById('period-main').textContent = p.main;
+  document.getElementById('period-dates').textContent = p.dates;
+}
+
+/* ---------- TREE TOGGLE (planilha orç.) ---------- */
+function toggleTree(id) {
+  const body = document.getElementById(id);
+  const ico = document.getElementById('ico-' + id);
+  if (!body) return;
+  const open = body.style.display !== 'none';
+  body.style.display = open ? 'none' : 'block';
+  if (ico) {
+    ico.className = open ? 'ti ti-chevron-right' : 'ti ti-chevron-down';
+    ico.style.fontSize = id.startsWith('ts') ? '11px' : '13px';
+    ico.style.color = 'var(--color-text-secondary, #9aa0b8)';
+  }
+}
+
+/* ---------- INLINE FORM TOGGLE ---------- */
+function toggleInline(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const open = el.classList.contains('open');
+  el.classList.toggle('open');
+  el.style.display = open ? 'none' : 'block';
+}
+
+/* ---------- EQUIPAMENTO DETAIL ---------- */
+const equipData = {
+  ex140: { nome: 'Escavadeira 140 — Hyundai R140 LC-9SB', sub: 'Centro de custo #032 · Máquina pesada · Operando', ico: 'ti-backhoe', cor: 'var(--accent)', hor: '6.637', prox: '6.700', pct: '94' },
+  ex145: { nome: 'Escavadeira 145 — Hyundai 145C EVO', sub: 'Centro de custo #040 · Máquina pesada · Operando', ico: 'ti-backhoe', cor: 'var(--accent)', hor: '4.210', prox: '4.500', pct: '42' },
+  ex150: { nome: 'Escavadeira 150 — Hyundai R150 LC-9SB', sub: 'Centro de custo #039 · Máquina pesada · Operando', ico: 'ti-backhoe', cor: 'var(--accent)', hor: '3.840', prox: '4.000', pct: '32' },
+  ex220: { nome: 'Escavadeira 220 — Hyundai R220LC', sub: 'Centro de custo #037 · Máquina pesada · Operando', ico: 'ti-backhoe', cor: 'var(--accent)', hor: '7.120', prox: '7.250', pct: '74' },
+  rolo01: { nome: 'Rolo Compactador 01 — Dynapac CA250STD', sub: 'Centro de custo #029 · Máquina · Alerta preventiva', ico: 'ti-bulldozer', cor: 'var(--red)', hor: '3.120', prox: '3.150', pct: '98' },
+  moto170: { nome: 'Motoniveladora 170 — New Holland RG170', sub: 'Centro de custo #041 · Máquina · Operando', ico: 'ti-tractor', cor: 'var(--green)', hor: '1.240', prox: '1.500', pct: '24' },
+  retro01: { nome: 'Retroescavadeira 01 — New Holland B110B', sub: 'Centro de custo #030 · Máquina · Operando', ico: 'ti-backhoe', cor: 'var(--purple)', hor: '2.180', prox: '2.250', pct: '72' },
+  odr: { nome: 'ODR-3G42 — MB Axor 2544 (Cavalo)', sub: 'Centro de custo #014 · Caminhão · Em rota', ico: 'ti-truck', cor: 'var(--yellow)', hor: '—', prox: '—', pct: '0' },
+  ppj: { nome: 'PPJ-5430 — MB Atego 2426 Caçamba', sub: 'Centro de custo #012 · Caminhão · Em rota', ico: 'ti-truck', cor: 'var(--yellow)', hor: '—', prox: '—', pct: '0' },
+};
+function selEquip(id, card) {
+  document.querySelectorAll('#page-equipamentos .list-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+  const d = equipData[id];
+  if (!d) return;
+  const panel = document.getElementById('equip-detail');
+  panel.querySelector('.detail-name').textContent = d.nome;
+  panel.querySelector('.detail-sub').innerHTML = d.sub;
+  panel.querySelector('.detail-icon i').className = 'ti ' + d.ico;
+  panel.querySelector('.detail-icon i').style.color = d.cor;
+  panel.querySelector('.detail-icon').style.background = d.cor.replace('var(', 'rgba(').replace(')', ', 0.15)');
+}
+
+/* ---------- COLABORADOR DETAIL ---------- */
+function selColab(id, card) {
+  document.querySelectorAll('#page-colaboradores .list-card').forEach(c => c.classList.remove('selected'));
+  card.classList.add('selected');
+}
+
+/* ---------- SIF CALCULATION ---------- */
+function calcHours(ini, fim) {
+  if (!ini || !fim) return 0;
+  const [ih, im] = ini.split(':').map(Number);
+  const [fh, fm] = fim.split(':').map(Number);
+  return Math.max(0, (fh * 60 + fm - ih * 60 - im) / 60);
+}
+function fmt(n, d = 2) { return n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }); }
+
+function updSIF() {
+  const sel = document.getElementById('sif-equip-sel');
+  const opt = sel.selectedOptions[0];
+  const modal = opt.dataset.modal;
+  const taxa = parseFloat(opt.dataset.taxa);
+  const nomes = {
+    ex140: 'Escavadeira 140', ex145: 'Escavadeira 145', ex220: 'Escavadeira 220',
+    moto170: 'Motoniveladora 170', motocase: 'Motoniveladora Case',
+    rolo01: 'Rolo Compact. 01', rolo02: 'Rolo Compact. 02',
+    retro01: 'Retroescavadeira 01', retro02: 'Retroescavadeira 02',
+    odr: 'ODR-3G42', ppj: 'PPJ-5430'
+  };
+  const nome = nomes[sel.value] || sel.value;
+  document.getElementById('sif-header-nome').textContent = 'SIF — ' + nome;
+  document.getElementById('sif-form-nome').textContent = nome;
+  document.getElementById('sif-tbl-titulo').textContent = 'Registros — ' + nome;
+  const isDiaria = modal === 'diaria';
+  document.getElementById('sif-regra-diaria').style.display = isDiaria ? 'flex' : 'none';
+  document.getElementById('sif-modal-badge').textContent = isDiaria ? 'Por diária · R$' + taxa + '/dia' : 'Por hora · R$' + taxa + '/h';
+  document.getElementById('sif-modal-badge').className = isDiaria ? 'badge badge-yellow' : 'badge badge-blue';
+  updSIFCalc();
+}
+
+function updSIFCalc() {
+  const sel = document.getElementById('sif-equip-sel');
+  const opt = sel.selectedOptions[0];
+  const modal = opt.dataset.modal;
+  const taxa = parseFloat(opt.dataset.taxa);
+  const ini = document.getElementById('sif-ini').value;
+  const fim = document.getElementById('sif-fim').value;
+  const h = calcHours(ini, fim);
+  const hi = parseFloat(document.getElementById('sif-hi').value || 0);
+  const hf = parseFloat(document.getElementById('sif-hf').value || 0);
+  document.getElementById('sif-th').value = fmt(h, 1) + 'h';
+  document.getElementById('sif-dh').value = fmt(hf - hi, 1);
+  document.getElementById('sif-htotal').value = fmt(hf, 1) + ' h';
+  let val;
+  if (modal === 'hora') {
+    val = taxa * h;
+    document.getElementById('calc-modal').textContent = 'Por hora';
+    document.getElementById('calc-taxa').textContent = 'R$ ' + fmt(taxa) + '/h';
+    document.getElementById('calc-horas').textContent = fmt(h, 1) + ' h';
+    document.getElementById('calc-valor').textContent = 'R$ ' + fmt(val);
+    document.getElementById('calc-diaria-box').style.display = 'none';
+  } else {
+    let regra, badge;
+    if (h <= 3) { val = taxa * (h / 8); regra = '% de diária (< 3h)'; badge = '% de diária'; }
+    else if (h <= 5) { val = taxa * 0.5; regra = 'Meia diária (3h–5h)'; badge = 'Meia diária'; }
+    else { val = taxa; regra = 'Diária cheia (> 5h)'; badge = 'Diária cheia'; }
+    document.getElementById('calc-modal').textContent = 'Por diária';
+    document.getElementById('calc-taxa').textContent = 'R$ ' + fmt(taxa) + '/dia';
+    document.getElementById('calc-horas').textContent = fmt(h, 1) + ' h';
+    document.getElementById('calc-valor').textContent = 'R$ ' + fmt(val);
+    document.getElementById('calc-diaria-box').style.display = 'block';
+    document.getElementById('calc-d-horas').textContent = fmt(h, 1) + ' h';
+    document.getElementById('calc-d-regra').textContent = badge;
+    document.getElementById('calc-d-cheia').textContent = 'R$ ' + fmt(taxa);
+    document.getElementById('calc-d-valor').textContent = 'R$ ' + fmt(val);
+  }
+}
+
+function salvarSIF() {
+  const sel = document.getElementById('sif-equip-sel');
+  const opt = sel.selectedOptions[0];
+  const modal = opt.dataset.modal;
+  const taxa = parseFloat(opt.dataset.taxa);
+  const ini = document.getElementById('sif-ini').value;
+  const fim = document.getElementById('sif-fim').value;
+  const h = calcHours(ini, fim);
+  const hi = parseFloat(document.getElementById('sif-hi').value || 0);
+  const hf = parseFloat(document.getElementById('sif-hf').value || 0);
+  const data = document.getElementById('sif-data').value.split('-').reverse().join('/');
+  const op = document.getElementById('sif-operador').value;
+  const etapa = document.getElementById('sif-etapa').selectedOptions[0];
+  const sub = document.getElementById('sif-sub').selectedOptions[0];
+  const svc = document.getElementById('sif-svc').selectedOptions[0];
+  const obs = document.getElementById('sif-obs').value || '—';
+  let val;
+  if (modal === 'hora') { val = taxa * h; }
+  else if (h <= 3) { val = taxa * (h / 8); }
+  else if (h <= 5) { val = taxa * 0.5; }
+  else { val = taxa; }
+  const valStr = 'R$ ' + fmt(val);
+  const row = document.getElementById('sif-new-row');
+  document.getElementById('sn-data').textContent = data;
+  document.getElementById('sn-op').textContent = op;
+  document.getElementById('sn-ini').textContent = ini;
+  document.getElementById('sn-fim').textContent = fim;
+  document.getElementById('sn-h').textContent = fmt(h, 1) + 'h';
+  document.getElementById('sn-hi').textContent = fmt(hi, 1);
+  document.getElementById('sn-hf').textContent = fmt(hf, 1);
+  document.getElementById('sn-ht').textContent = fmt(hf, 1) + 'h';
+  document.getElementById('sn-et').textContent = etapa.value + ' — ' + etapa.text.split(' — ')[1];
+  document.getElementById('sn-sub').textContent = sub.value + ' — ' + sub.text.split(' — ')[1];
+  document.getElementById('sn-svc').textContent = svc.value + ' — ' + svc.text.split(' — ').slice(1).join(' — ');
+  document.getElementById('sn-unid').textContent = modal === 'hora' ? 'Hora' : 'Diária';
+  document.getElementById('sn-unit').textContent = 'R$' + taxa;
+  document.getElementById('sn-total').textContent = valStr;
+  document.getElementById('sn-obs').textContent = obs;
+  row.style.display = '';
+  row.style.background = 'rgba(34,197,94,0.06)';
+  document.getElementById('sif-ok-val').textContent = valStr;
+  document.getElementById('sif-ok-msg').style.display = 'block';
+  setTimeout(() => {
+    document.getElementById('sif-ok-msg').style.display = 'none';
+    row.style.background = '';
+  }, 5000);
+}
+
+/* ---------- ESTOQUE TABS ---------- */
+function swEstoqueTab(tab, el) {
+  ['produtos', 'movimentacoes', 'criticos'].forEach(t => {
+    const el2 = document.getElementById('estoque-tab-' + t);
+    if (el2) el2.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('#estoque-tabs .tab-item').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+/* ---------- SEGUROS TABS ---------- */
+function swSegTab(tab, el) {
+  ['apolices', 'coberturas', 'consulta'].forEach(t => {
+    const el2 = document.getElementById('seg-tab-' + t);
+    if (el2) el2.style.display = t === tab ? 'block' : 'none';
+  });
+  document.querySelectorAll('#page-seguros .tab-item').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+}
+
+/* ---------- MANUTENÇÃO — ADICIONAR PEÇA ---------- */
+function addPecaRow() {
+  const list = document.getElementById('pecas-list');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:flex;gap:6px;align-items:flex-end;background:var(--bg3);border-radius:var(--radius);padding:8px;margin-top:6px';
+  div.innerHTML = `
+    <div class="form-row" style="flex:2;margin:0"><label>Peça</label><select><option>— Selecione —</option><option>FILTRO HIDRAULICO PRINCIPAL ESCAVADEIRAS HYUNDAI</option><option>FILTRO DE OLEO MOTONIVELADORA</option><option>OLEO 15W-40</option><option>PINO / TRAVA ESCAVADEIRA 140/150/220</option><option>+ Cadastrar nova peça...</option></select></div>
+    <div class="form-row" style="flex:1;margin:0"><label>Qtd.</label><input type="number" placeholder="1" min="1"></div>
+    <div class="form-row" style="flex:1;margin:0"><label>R$/un (PEPS)</label><input type="text" placeholder="Auto" readonly style="background:var(--bg4)"></div>
+    <button class="btn-icon" onclick="this.parentElement.remove()" style="margin-bottom:0"><i class="ti ti-trash"></i></button>`;
+  list.appendChild(div);
+}
+
+/* ---------- INIT ---------- */
+updSIF();
+
+/* ============================================================
+   INTEGRAÇÃO COM O BANCO DE DADOS
+   Todas as funções abaixo conectam o sistema ao backend
+   rodando em http://localhost:3000
+   ============================================================ */
+
+const API = 'http://localhost:3000/api';
+
+/* ---------- UTILITÁRIOS ---------- */
+function showToast(msg, tipo) {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:24px;right:24px;z-index:9999;
+    padding:12px 20px;border-radius:8px;font-size:13px;font-weight:500;
+    background:${tipo === 'erro' ? 'var(--red-bg)' : 'var(--green-bg)'};
+    color:${tipo === 'erro' ? 'var(--red)' : 'var(--green)'};
+    border:1px solid ${tipo === 'erro' ? 'var(--red)' : 'var(--green)'};
+    box-shadow:var(--shadow);`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
+}
+
+async function apiFetch(url, opts) {
+  try {
+    const res = await fetch(API + url, opts);
+    return await res.json();
+  } catch(e) {
+    showToast('Erro de conexão com o servidor. Verifique se o backend está rodando.', 'erro');
+    return null;
+  }
+}
+
+/* ---------- EQUIPAMENTOS ---------- */
+async function carregarEquipamentos() {
+  const dados = await apiFetch('/equipamentos');
+  if (!dados) return;
+
+  // Atualiza painel banco
+  const lista = document.getElementById('db-lista-equipamentos');
+  if (lista) {
+    lista.innerHTML = dados.length === 0
+      ? '<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Nenhum equipamento cadastrado.</td></tr>'
+      : dados.map(e => `
+          <tr>
+            <td>${e.nome}</td>
+            <td>${e.tipo || '—'}</td>
+            <td>${e.placa || '—'}</td>
+            <td><span class="badge ${e.status === 'disponivel' ? 'badge-green' : e.status === 'manutencao' ? 'badge-red' : 'badge-yellow'}">${e.status}</span></td>
+            <td>${e.horimetro || 0} h</td>
+            <td>R$ ${parseFloat(e.taxa_hora || 0).toFixed(2)}/h</td>
+          </tr>`).join('');
+  }
+
+  // Atualiza contador no cabeçalho
+  const cnt = document.getElementById('equip-count');
+  if (cnt) cnt.textContent = '(' + dados.length + ' cadastrados)';
+  const dashCnt = document.getElementById('dash-equip-count');
+  if (dashCnt) dashCnt.textContent = dados.length;
+  const dashSub = document.getElementById('dash-equip-sub');
+  if (dashSub) dashSub.textContent = dados.length === 1 ? 'equipamento cadastrado' : 'equipamentos cadastrados';
+
+  // Atualiza lista na página de equipamentos
+  const scroll = document.getElementById('equip-list-scroll');
+  if (scroll) {
+    if (dados.length === 0) {
+      scroll.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px"><i class="ti ti-backhoe" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.3"></i>Nenhum equipamento cadastrado.<br>Use o painel de banco de dados para adicionar.</div>';
+    } else {
+      scroll.innerHTML = dados.map(e => `
+        <div class="list-card">
+          <div class="list-card-icon" style="background:var(--accent-bg)"><i class="ti ti-backhoe" style="color:var(--accent)"></i></div>
+          <div class="list-card-info">
+            <div class="list-card-name">${e.nome}</div>
+            <div class="list-card-sub">${e.modelo || e.tipo || '—'} · ${e.placa || 'sem placa'}</div>
+            <div class="list-card-tags">
+              <span class="badge ${e.status === 'operando' ? 'badge-green' : e.status === 'manutencao' ? 'badge-red' : 'badge-yellow'}">${e.status}</span>
+              <span class="badge badge-blue">${e.horimetro || 0}h</span>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+  }
+
+  // Atualiza tabela do dashboard
+  const tbody = document.getElementById('dash-frota-tbody');
+  if (tbody) {
+    tbody.innerHTML = dados.length === 0
+      ? '<tr><td colspan="7" style="text-align:center;color:var(--text3);padding:24px">Nenhum equipamento cadastrado.</td></tr>'
+      : dados.map(e => `<tr>
+          <td>${e.nome}</td>
+          <td>${e.tipo || '—'}</td>
+          <td>${e.placa || '—'}</td>
+          <td class="mono">${e.horimetro || 0}h</td>
+          <td>R$ ${parseFloat(e.taxa_hora || 0).toFixed(2)}/h</td>
+          <td>${e.modal || '—'}</td>
+          <td><span class="badge ${e.status === 'operando' ? 'badge-green' : e.status === 'manutencao' ? 'badge-red' : 'badge-yellow'}">${e.status}</span></td>
+        </tr>`).join('');
+  }
+}
+
+async function salvarEquipamentoDB() {
+  const dados = {
+    nome: document.getElementById('db-eq-nome').value,
+    tipo: document.getElementById('db-eq-tipo').value,
+    modelo: document.getElementById('db-eq-modelo').value,
+    placa: document.getElementById('db-eq-placa').value,
+    status: document.getElementById('db-eq-status').value,
+    horimetro: parseFloat(document.getElementById('db-eq-horimetro').value || 0),
+    modal: document.getElementById('db-eq-modal').value,
+    taxa_hora: parseFloat(document.getElementById('db-eq-taxa').value || 0)
+  };
+  if (!dados.nome) { showToast('Preencha o nome do equipamento.', 'erro'); return; }
+  const res = await apiFetch('/equipamentos', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados)
+  });
+  if (res) { showToast('Equipamento salvo no banco!', 'ok'); carregarEquipamentos(); }
+}
+
+/* ---------- COLABORADORES ---------- */
+async function carregarColaboradores() {
+  const dados = await apiFetch('/colaboradores');
+  if (!dados) return;
+
+  // Painel banco
+  const lista = document.getElementById('db-lista-colaboradores');
+  if (lista) {
+    lista.innerHTML = dados.length === 0
+      ? '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">Nenhum colaborador cadastrado.</td></tr>'
+      : dados.map(c => `
+          <tr>
+            <td>${c.nome}</td>
+            <td>${c.funcao || '—'}</td>
+            <td>${c.cnh || '—'}</td>
+            <td>${c.telefone || '—'}</td>
+            <td><span class="badge ${c.status === 'ativo' ? 'badge-green' : 'badge-red'}">${c.status}</span></td>
+          </tr>`).join('');
+  }
+
+  // Contador
+  const cnt = document.getElementById('colab-count');
+  if (cnt) cnt.textContent = '(' + dados.length + ' cadastrados)';
+
+  // Lista na página de colaboradores
+  const scroll = document.getElementById('colab-list-scroll');
+  if (scroll) {
+    if (dados.length === 0) {
+      scroll.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:12px"><i class="ti ti-users" style="font-size:32px;display:block;margin-bottom:8px;opacity:0.3"></i>Nenhum colaborador cadastrado.<br>Use o painel de banco de dados para adicionar.</div>';
+    } else {
+      const cores = ['accent','green','purple','yellow','red'];
+      scroll.innerHTML = dados.map((c, i) => {
+        const cor = cores[i % cores.length];
+        const iniciais = c.nome.split(' ').map(n => n[0]).slice(0,2).join('').toUpperCase();
+        return `<div class="list-card">
+          <div class="list-card-icon" style="background:var(--${cor}-bg);border-radius:50%;font-size:13px;font-weight:600;color:var(--${cor})">${iniciais}</div>
+          <div class="list-card-info">
+            <div class="list-card-name">${c.nome}</div>
+            <div class="list-card-sub">${c.funcao || '—'}</div>
+            <div class="list-card-tags">
+              <span class="badge badge-blue">${c.funcao || 'Sem função'}</span>
+              <span class="badge ${c.status === 'ativo' ? 'badge-green' : 'badge-red'}">${c.status}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
+async function salvarColaboradoDB() {
+  const dados = {
+    nome: document.getElementById('db-col-nome').value,
+    funcao: document.getElementById('db-col-funcao').value,
+    cnh: document.getElementById('db-col-cnh').value,
+    telefone: document.getElementById('db-col-tel').value,
+    status: 'ativo'
+  };
+  if (!dados.nome) { showToast('Preencha o nome do colaborador.', 'erro'); return; }
+  const res = await apiFetch('/colaboradores', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados)
+  });
+  if (res) { showToast('Colaborador salvo no banco!', 'ok'); carregarColaboradores(); }
+}
+
+/* ---------- REGISTROS SIF ---------- */
+async function salvarSIFDB() {
+  const sel = document.getElementById('sif-equip-sel');
+  const opt = sel.selectedOptions[0];
+  const modal = opt.dataset.modal;
+  const taxa = parseFloat(opt.dataset.taxa);
+  const ini = document.getElementById('sif-ini').value;
+  const fim = document.getElementById('sif-fim').value;
+  const h = calcHours(ini, fim);
+  const hi = parseFloat(document.getElementById('sif-hi').value || 0);
+  const hf = parseFloat(document.getElementById('sif-hf').value || 0);
+  const data = document.getElementById('sif-data').value;
+  let val;
+  if (modal === 'hora') { val = taxa * h; }
+  else if (h <= 3) { val = taxa * (h / 8); }
+  else if (h <= 5) { val = taxa * 0.5; }
+  else { val = taxa; }
+  const dados = {
+    equipamento_id: null,
+    colaborador_id: null,
+    data: data,
+    hora_ini: ini,
+    hora_fim: fim,
+    horas_trabalhadas: h,
+    horimetro_ini: hi,
+    horimetro_fim: hf,
+    etapa: document.getElementById('sif-etapa').value,
+    sub_etapa: document.getElementById('sif-sub').value,
+    servico: document.getElementById('sif-svc').value,
+    valor: val,
+    observacao: document.getElementById('sif-obs').value
+  };
+  const res = await apiFetch('/registros-sif', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados)
+  });
+  if (res) showToast('Registro SIF salvo no banco! ID: #' + res.id, 'ok');
+}
+
+/* ---------- ESTOQUE ---------- */
+async function carregarEstoque() {
+  const dados = await apiFetch('/estoque');
+  if (!dados) return;
+  const lista = document.getElementById('db-lista-estoque');
+  if (!lista) return;
+  lista.innerHTML = dados.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">Nenhum produto cadastrado.</td></tr>'
+    : dados.map(p => `
+        <tr>
+          <td>${p.nome}</td>
+          <td>${p.categoria || '—'}</td>
+          <td>${p.quantidade} ${p.unidade || ''}</td>
+          <td>${p.estoque_minimo} ${p.unidade || ''}</td>
+          <td>R$ ${parseFloat(p.custo_unitario || 0).toFixed(2)}</td>
+        </tr>`).join('');
+}
+
+async function salvarEstoqueDB() {
+  const dados = {
+    nome: document.getElementById('db-est-nome').value,
+    categoria: document.getElementById('db-est-cat').value,
+    unidade: document.getElementById('db-est-un').value,
+    quantidade: parseFloat(document.getElementById('db-est-qtd').value || 0),
+    estoque_minimo: parseFloat(document.getElementById('db-est-min').value || 0),
+    custo_unitario: parseFloat(document.getElementById('db-est-custo').value || 0)
+  };
+  if (!dados.nome) { showToast('Preencha o nome do produto.', 'erro'); return; }
+  const res = await apiFetch('/estoque', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dados)
+  });
+  if (res) { showToast('Produto salvo no estoque!', 'ok'); carregarEstoque(); }
+}
+
+/* ---------- HOOK NO BOTÃO SALVAR SIF ---------- */
+const _salvarSIFOriginal = salvarSIF;
+window.salvarSIF = function() {
+  _salvarSIFOriginal();
+  salvarSIFDB();
+};
+
+/* ---------- INIT BANCO ---------- */
+window.addEventListener('load', () => {
+  carregarEquipamentos();
+  carregarColaboradores();
+  carregarEstoque();
+});
+</script>
+
+<!-- ============================================================
+     PAINEL DE BANCO DE DADOS
+     Formulários para cadastrar e visualizar dados reais
+     ============================================================ -->
+<div id="db-panel" style="display:none;position:fixed;top:0;right:0;width:480px;height:100vh;
+  background:var(--bg2);border-left:1px solid var(--border);z-index:1000;
+  overflow-y:auto;box-shadow:var(--shadow);">
+  <div style="padding:16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;">
+    <i class="ti ti-database" style="font-size:18px;color:var(--accent)"></i>
+    <span style="font-weight:600;font-size:14px">Banco de Dados</span>
+    <button onclick="document.getElementById('db-panel').style.display='none'"
+      style="margin-left:auto;background:none;border:none;color:var(--text3);cursor:pointer;font-size:18px">×</button>
+  </div>
+
+  <!-- TABS -->
+  <div style="display:flex;border-bottom:1px solid var(--border);">
+    <button onclick="dbTab('equipamentos',this)" id="dbtab-equipamentos"
+      style="flex:1;padding:10px;background:var(--accent-bg);color:var(--accent);border:none;cursor:pointer;font-size:11px;font-weight:600;border-bottom:2px solid var(--accent)">
+      EQUIPAMENTOS</button>
+    <button onclick="dbTab('colaboradores',this)" id="dbtab-colaboradores"
+      style="flex:1;padding:10px;background:none;color:var(--text3);border:none;cursor:pointer;font-size:11px;font-weight:600">
+      COLABORADORES</button>
+    <button onclick="dbTab('estoque',this)" id="dbtab-estoque"
+      style="flex:1;padding:10px;background:none;color:var(--text3);border:none;cursor:pointer;font-size:11px;font-weight:600">
+      ESTOQUE</button>
+  </div>
+
+  <!-- TAB EQUIPAMENTOS -->
+  <div id="dbtab-content-equipamentos" style="padding:16px">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title"><i class="ti ti-plus"></i> Cadastrar Equipamento</div>
+      <div class="form-row"><label>Nome *</label><input id="db-eq-nome" class="form-input" placeholder="Ex: Escavadeira 140"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div class="form-row"><label>Tipo</label>
+          <select id="db-eq-tipo" class="form-input">
+            <option>Escavadeira</option><option>Motoniveladora</option>
+            <option>Rolo Compactador</option><option>Retroescavadeira</option>
+            <option>Caminhão</option><option>Outro</option>
+          </select></div>
+        <div class="form-row"><label>Modelo</label><input id="db-eq-modelo" class="form-input" placeholder="Ex: Hyundai R140"></div>
+        <div class="form-row"><label>Placa</label><input id="db-eq-placa" class="form-input" placeholder="Ex: ABC-1234"></div>
+        <div class="form-row"><label>Status</label>
+          <select id="db-eq-status" class="form-input">
+            <option value="disponivel">Disponível</option>
+            <option value="operando">Operando</option>
+            <option value="manutencao">Manutenção</option>
+          </select></div>
+        <div class="form-row"><label>Horímetro atual</label><input id="db-eq-horimetro" class="form-input" type="number" placeholder="0"></div>
+        <div class="form-row"><label>Modal cobrança</label>
+          <select id="db-eq-modal" class="form-input">
+            <option value="hora">Por hora</option>
+            <option value="diaria">Por diária</option>
+          </select></div>
+        <div class="form-row" style="grid-column:span 2"><label>Taxa (R$/h ou R$/dia)</label>
+          <input id="db-eq-taxa" class="form-input" type="number" placeholder="0.00"></div>
+      </div>
+      <button onclick="salvarEquipamentoDB()" class="btn-login" style="margin-top:12px">
+        <i class="ti ti-device-floppy"></i> Salvar no Banco</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-list"></i> Equipamentos cadastrados
+        <button onclick="carregarEquipamentos()" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px">↻ Atualizar</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="color:var(--text3)">
+            <th style="text-align:left;padding:6px">Nome</th>
+            <th style="text-align:left;padding:6px">Tipo</th>
+            <th style="text-align:left;padding:6px">Placa</th>
+            <th style="text-align:left;padding:6px">Status</th>
+            <th style="text-align:left;padding:6px">Horímetro</th>
+            <th style="text-align:left;padding:6px">Taxa</th>
+          </tr></thead>
+          <tbody id="db-lista-equipamentos">
+            <tr><td colspan="6" style="text-align:center;color:var(--text3);padding:20px">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB COLABORADORES -->
+  <div id="dbtab-content-colaboradores" style="padding:16px;display:none">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title"><i class="ti ti-plus"></i> Cadastrar Colaborador</div>
+      <div class="form-row"><label>Nome *</label><input id="db-col-nome" class="form-input" placeholder="Nome completo"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div class="form-row"><label>Função</label>
+          <select id="db-col-funcao" class="form-input">
+            <option>Operador de Máquina</option><option>Motorista</option>
+            <option>Encarregado</option><option>Ajudante</option><option>Outro</option>
+          </select></div>
+        <div class="form-row"><label>CNH</label><input id="db-col-cnh" class="form-input" placeholder="Ex: AB"></div>
+        <div class="form-row" style="grid-column:span 2"><label>Telefone</label>
+          <input id="db-col-tel" class="form-input" placeholder="(27) 99999-9999"></div>
+      </div>
+      <button onclick="salvarColaboradoDB()" class="btn-login" style="margin-top:12px">
+        <i class="ti ti-device-floppy"></i> Salvar no Banco</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-list"></i> Colaboradores cadastrados
+        <button onclick="carregarColaboradores()" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px">↻ Atualizar</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="color:var(--text3)">
+            <th style="text-align:left;padding:6px">Nome</th>
+            <th style="text-align:left;padding:6px">Função</th>
+            <th style="text-align:left;padding:6px">CNH</th>
+            <th style="text-align:left;padding:6px">Telefone</th>
+            <th style="text-align:left;padding:6px">Status</th>
+          </tr></thead>
+          <tbody id="db-lista-colaboradores">
+            <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB ESTOQUE -->
+  <div id="dbtab-content-estoque" style="padding:16px;display:none">
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title"><i class="ti ti-plus"></i> Cadastrar Produto</div>
+      <div class="form-row"><label>Nome *</label><input id="db-est-nome" class="form-input" placeholder="Ex: Filtro Hidráulico"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px">
+        <div class="form-row"><label>Categoria</label>
+          <select id="db-est-cat" class="form-input">
+            <option>Filtros</option><option>Óleos e Lubrificantes</option>
+            <option>Peças</option><option>Combustível</option><option>Outro</option>
+          </select></div>
+        <div class="form-row"><label>Unidade</label>
+          <select id="db-est-un" class="form-input">
+            <option value="un">Unidade</option><option value="l">Litro</option>
+            <option value="kg">Kg</option><option value="m">Metro</option>
+          </select></div>
+        <div class="form-row"><label>Quantidade</label><input id="db-est-qtd" class="form-input" type="number" placeholder="0"></div>
+        <div class="form-row"><label>Estoque mínimo</label><input id="db-est-min" class="form-input" type="number" placeholder="0"></div>
+        <div class="form-row" style="grid-column:span 2"><label>Custo unitário (R$)</label>
+          <input id="db-est-custo" class="form-input" type="number" placeholder="0.00"></div>
+      </div>
+      <button onclick="salvarEstoqueDB()" class="btn-login" style="margin-top:12px">
+        <i class="ti ti-device-floppy"></i> Salvar no Banco</button>
+    </div>
+    <div class="card">
+      <div class="card-title"><i class="ti ti-list"></i> Produtos no estoque
+        <button onclick="carregarEstoque()" style="margin-left:auto;background:none;border:none;color:var(--accent);cursor:pointer;font-size:11px">↻ Atualizar</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr style="color:var(--text3)">
+            <th style="text-align:left;padding:6px">Nome</th>
+            <th style="text-align:left;padding:6px">Categoria</th>
+            <th style="text-align:left;padding:6px">Qtd.</th>
+            <th style="text-align:left;padding:6px">Mínimo</th>
+            <th style="text-align:left;padding:6px">Custo/un</th>
+          </tr></thead>
+          <tbody id="db-lista-estoque">
+            <tr><td colspan="5" style="text-align:center;color:var(--text3);padding:20px">Carregando...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTÃO FLUTUANTE BANCO DE DADOS -->
+<button onclick="document.getElementById('db-panel').style.display='block'"
+  style="position:fixed;bottom:24px;right:24px;z-index:999;width:48px;height:48px;
+  border-radius:50%;background:var(--accent);border:none;cursor:pointer;
+  box-shadow:0 4px 20px rgba(79,124,255,0.4);display:flex;align-items:center;justify-content:center;"
+  title="Abrir painel do banco de dados">
+  <i class="ti ti-database" style="font-size:20px;color:#fff"></i>
+</button>
+
+<script>
+function dbTab(tab, el) {
+  ['equipamentos','colaboradores','estoque'].forEach(t => {
+    document.getElementById('dbtab-content-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('dbtab-' + t);
+    btn.style.background = t === tab ? 'var(--accent-bg)' : 'none';
+    btn.style.color = t === tab ? 'var(--accent)' : 'var(--text3)';
+    btn.style.borderBottom = t === tab ? '2px solid var(--accent)' : 'none';
+  });
+}
+</script>
+</body>
+</html>
