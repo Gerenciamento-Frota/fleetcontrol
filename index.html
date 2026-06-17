@@ -1890,7 +1890,7 @@ function updSIFCalc() {
   }
 }
 
-function salvarSIF() {
+async function salvarSIF() {
   const sel = document.getElementById('sif-equip-sel');
   const opt = sel.selectedOptions[0];
   const modal = opt.dataset.modal;
@@ -1900,7 +1900,8 @@ function salvarSIF() {
   const h = calcHours(ini, fim);
   const hi = parseFloat(document.getElementById('sif-hi').value || 0);
   const hf = parseFloat(document.getElementById('sif-hf').value || 0);
-  const data = document.getElementById('sif-data').value.split('-').reverse().join('/');
+  const dataRaw = document.getElementById('sif-data').value;
+  const data = dataRaw.split('-').reverse().join('/');
   const op = document.getElementById('sif-operador').value;
   const etapa = document.getElementById('sif-etapa').selectedOptions[0];
   const sub = document.getElementById('sif-sub').selectedOptions[0];
@@ -1912,6 +1913,36 @@ function salvarSIF() {
   else if (h <= 5) { val = taxa * 0.5; }
   else { val = taxa; }
   const valStr = 'R$ ' + fmt(val);
+
+  if (!ini || !fim || !op) {
+    showToast('Preencha horário de início, fim e operador.', 'erro');
+    return;
+  }
+
+  const dadosBanco = {
+    equipamento_id: parseInt(opt.dataset.id) || null,
+    colaborador_id: null,
+    data: dataRaw,
+    hora_ini: ini,
+    hora_fim: fim,
+    horas_trabalhadas: h,
+    horimetro_ini: hi,
+    horimetro_fim: hf,
+    etapa: etapa.value + ' — ' + etapa.text.split(' — ')[1],
+    sub_etapa: sub.value + ' — ' + sub.text.split(' — ')[1],
+    servico: svc.value + ' — ' + svc.text.split(' — ').slice(1).join(' — '),
+    valor: val,
+    observacao: obs
+  };
+
+  const res = await apiFetch('/registros-sif', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dadosBanco)
+  });
+
+  if (!res) return;
+
   const row = document.getElementById('sif-new-row');
   document.getElementById('sn-data').textContent = data;
   document.getElementById('sn-op').textContent = op;
@@ -1932,10 +1963,34 @@ function salvarSIF() {
   row.style.background = 'rgba(34,197,94,0.06)';
   document.getElementById('sif-ok-val').textContent = valStr;
   document.getElementById('sif-ok-msg').style.display = 'block';
+  showToast('Apontamento salvo no banco!', 'ok');
   setTimeout(() => {
     document.getElementById('sif-ok-msg').style.display = 'none';
     row.style.background = '';
   }, 5000);
+
+  carregarRegistrosSIF();
+}
+
+async function carregarRegistrosSIF() {
+  const dados = await apiFetch('/registros-sif');
+  if (!dados || dados.length === 0) return;
+  const tbody = document.getElementById('sif-tbody-historico');
+  if (!tbody) return;
+  tbody.innerHTML = dados.slice(0, 50).map(r => `
+    <tr>
+      <td>${r.data ? new Date(r.data).toLocaleDateString('pt-BR') : '—'}</td>
+      <td>${r.hora_ini || '—'} – ${r.hora_fim || '—'}</td>
+      <td class="mono">${parseFloat(r.horas_trabalhadas || 0).toFixed(1)}h</td>
+      <td class="mono">${parseFloat(r.horimetro_ini || 0).toFixed(1)} → ${parseFloat(r.horimetro_fim || 0).toFixed(1)}</td>
+      <td>${r.etapa || '—'}</td>
+      <td>${r.servico || '—'}</td>
+      <td style="color:var(--green);font-weight:500">R$ ${parseFloat(r.valor || 0).toFixed(2)}</td>
+      <td style="color:var(--text3)">${r.observacao || '—'}</td>
+    </tr>`).join('');
+  const total = dados.reduce((s, r) => s + parseFloat(r.valor || 0), 0);
+  const totalEl = document.getElementById('sif-total-geral');
+  if (totalEl) totalEl.textContent = 'Total: R$ ' + total.toFixed(2);
 }
 
 /* ---------- ESTOQUE TABS ---------- */
