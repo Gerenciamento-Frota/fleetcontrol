@@ -1829,7 +1829,7 @@ function calcHours(ini, fim) {
 }
 function fmt(n, d = 2) { return n.toLocaleString('pt-BR', { minimumFractionDigits: d, maximumFractionDigits: d }); }
 
-function updSIF() {
+async function carregarEquipamentosSIF() {   const dados = await apiFetch('/equipamentos');   if (!dados || dados.length === 0) return;   const sel = document.getElementById('sif-equip-sel');   if (!sel) return;   sel.innerHTML = dados.map(e => `     <option value="${e.id}"       data-modal="${e.modal || 'hora'}"       data-taxa="${e.taxa_hora || 0}"       data-id="${e.id}"       data-tipomedicao="${e.tipo_medicao || 'horimetro'}">       ${e.nome}${e.placa ? ' — ' + e.placa : ''}     </option>`).join('');   const apresEl = document.getElementById('sif-apres-equip');   const auditEl = document.getElementById('sif-audit-equip');   const opcoesExtra = '<option value="">Todos os equipamentos</option>' + dados.map(e => `<option value="${e.id}">${e.nome}</option>`).join('');   if (apresEl) apresEl.innerHTML = opcoesExtra;   if (auditEl) auditEl.innerHTML = opcoesExtra;   updSIF(); }  function updSIF() {
   const sel = document.getElementById('sif-equip-sel');
   const opt = sel.selectedOptions[0];
   const modal = opt.dataset.modal;
