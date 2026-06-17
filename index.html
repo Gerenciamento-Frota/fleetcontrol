@@ -1919,6 +1919,60 @@ async function salvarSIF() {
     return;
   }
 
+  const equipNome = opt.text || opt.value;
+  const tipoMedicao = opt.dataset.tipomedicao || 'horimetro';
+
+  const dadosAuditoria = {
+    equipamento_id: parseInt(opt.dataset.id) || null,
+    equipamento_nome: equipNome,
+    data: dataRaw,
+    hora_ini: ini,
+    hora_fim: fim,
+    horas_trabalhadas: h,
+    medicao_ini: hi,
+    medicao_fim: hf,
+    tipo_medicao: tipoMedicao,
+    etapa: etapa.value + ' — ' + etapa.text.split(' — ')[1],
+    sub_etapa: sub.value + ' — ' + sub.text.split(' — ')[1],
+    servico: svc.value + ' — ' + svc.text.split(' — ').slice(1).join(' — '),
+    modal: modal,
+    taxa: taxa,
+    valor: val,
+    observacao: obs,
+    lancado_por: 'Administrativo'
+  };
+
+  await apiFetch('/sif-auditoria', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dadosAuditoria)
+  });
+
+  const dadosApresentacao = {
+    equipamento_id: parseInt(opt.dataset.id) || null,
+    equipamento_nome: equipNome,
+    data: dataRaw,
+    hora_ini: ini,
+    hora_fim: fim,
+    horas_trabalhadas: h,
+    medicao_ini: hi,
+    medicao_fim: hf,
+    etapa: etapa.value + ' — ' + etapa.text.split(' — ')[1],
+    sub_etapa: sub.value + ' — ' + sub.text.split(' — ')[1],
+    servico: svc.value + ' — ' + svc.text.split(' — ').slice(1).join(' — '),
+    modal: modal,
+    taxa: taxa,
+    valor: val,
+    observacao: obs,
+    editado_por: 'Administrativo'
+  };
+
+  await apiFetch('/sif-apresentacao', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dadosApresentacao)
+  });
+
   const dadosBanco = {
     equipamento_id: parseInt(opt.dataset.id) || null,
     colaborador_id: null,
