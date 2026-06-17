@@ -2269,46 +2269,6 @@ async function salvarColaboradoDB() {
   if (res) { showToast('Colaborador salvo no banco!', 'ok'); carregarColaboradores(); }
 }
 
-/* ---------- REGISTROS SIF ---------- */
-async function salvarSIFDB() {
-  const sel = document.getElementById('sif-equip-sel');
-  const opt = sel.selectedOptions[0];
-  const modal = opt.dataset.modal;
-  const taxa = parseFloat(opt.dataset.taxa);
-  const ini = document.getElementById('sif-ini').value;
-  const fim = document.getElementById('sif-fim').value;
-  const h = calcHours(ini, fim);
-  const hi = parseFloat(document.getElementById('sif-hi').value || 0);
-  const hf = parseFloat(document.getElementById('sif-hf').value || 0);
-  const data = document.getElementById('sif-data').value;
-  let val;
-  if (modal === 'hora') { val = taxa * h; }
-  else if (h <= 3) { val = taxa * (h / 8); }
-  else if (h <= 5) { val = taxa * 0.5; }
-  else { val = taxa; }
-  const dados = {
-    equipamento_id: null,
-    colaborador_id: null,
-    data: data,
-    hora_ini: ini,
-    hora_fim: fim,
-    horas_trabalhadas: h,
-    horimetro_ini: hi,
-    horimetro_fim: hf,
-    etapa: document.getElementById('sif-etapa').value,
-    sub_etapa: document.getElementById('sif-sub').value,
-    servico: document.getElementById('sif-svc').value,
-    valor: val,
-    observacao: document.getElementById('sif-obs').value
-  };
-  const res = await apiFetch('/registros-sif', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(dados)
-  });
-  if (res) showToast('Registro SIF salvo no banco! ID: #' + res.id, 'ok');
-}
-
 /* ---------- ESTOQUE ---------- */
 async function carregarEstoque() {
   const dados = await apiFetch('/estoque');
@@ -2344,14 +2304,6 @@ async function salvarEstoqueDB() {
   });
   if (res) { showToast('Produto salvo no estoque!', 'ok'); carregarEstoque(); }
 }
-
-/* ---------- HOOK NO BOTÃO SALVAR SIF ---------- */
-const _salvarSIFOriginal = salvarSIF;
-window.salvarSIF = function() {
-  _salvarSIFOriginal();
-  salvarSIFDB();
-};
-
 /* ---------- INIT BANCO ---------- */
 window.addEventListener('load', () => {
   carregarEquipamentos();
