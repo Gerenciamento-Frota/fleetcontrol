@@ -1823,8 +1823,10 @@ async function carregarEquipamentosSIF() {   const dados = await apiFetch('/equi
   if (elRegraDiaria) elRegraDiaria.style.display = isDiaria ? 'flex' : 'none';
   if (elModalBadge) {
     elModalBadge.textContent = isDiaria ? 'Por diária · R$' + taxa + '/dia' : 'Por hora · R$' + taxa + '/h';
-    elModalBadge.className = isDiaria ? 'badge badge-yellow' : 'badge badge-blue';
+elModalBadge.className = isDiaria ? 'badge badge-yellow' : 'badge badge-blue';
   }
+  updSIFCalc();
+}
 
 function updSIFCalc() {
   const sel = document.getElementById('sif-equip-sel');
