@@ -1811,15 +1811,20 @@ async function carregarEquipamentosSIF() {   const dados = await apiFetch('/equi
     odr: 'ODR-3G42', ppj: 'PPJ-5430'
   };
   const nome = nomes[sel.value] || sel.value;
-  document.getElementById('sif-header-nome').textContent = 'SIF — ' + nome;
-  document.getElementById('sif-form-nome').textContent = nome;
-  document.getElementById('sif-tbl-titulo').textContent = 'Registros — ' + nome;
+  const elHeaderNome = document.getElementById('sif-header-nome');
+  const elFormNome = document.getElementById('sif-form-nome');
+  const elTblTitulo = document.getElementById('sif-tbl-titulo');
+  if (elHeaderNome) elHeaderNome.textContent = 'SIF — ' + nome;
+  if (elFormNome) elFormNome.textContent = nome;
+  if (elTblTitulo) elTblTitulo.textContent = 'Registros — ' + nome;
   const isDiaria = modal === 'diaria';
-  document.getElementById('sif-regra-diaria').style.display = isDiaria ? 'flex' : 'none';
-  document.getElementById('sif-modal-badge').textContent = isDiaria ? 'Por diária · R$' + taxa + '/dia' : 'Por hora · R$' + taxa + '/h';
-  document.getElementById('sif-modal-badge').className = isDiaria ? 'badge badge-yellow' : 'badge badge-blue';
-  updSIFCalc();
-}
+  const elRegraDiaria = document.getElementById('sif-regra-diaria');
+  const elModalBadge = document.getElementById('sif-modal-badge');
+  if (elRegraDiaria) elRegraDiaria.style.display = isDiaria ? 'flex' : 'none';
+  if (elModalBadge) {
+    elModalBadge.textContent = isDiaria ? 'Por diária · R$' + taxa + '/dia' : 'Por hora · R$' + taxa + '/h';
+    elModalBadge.className = isDiaria ? 'badge badge-yellow' : 'badge badge-blue';
+  }
 
 function updSIFCalc() {
   const sel = document.getElementById('sif-equip-sel');
@@ -1966,31 +1971,16 @@ async function salvarSIF() {
 
   if (!res) return;
 
-  const row = document.getElementById('sif-new-row');
-  document.getElementById('sn-data').textContent = data;
-  document.getElementById('sn-op').textContent = op;
-  document.getElementById('sn-ini').textContent = ini;
-  document.getElementById('sn-fim').textContent = fim;
-  document.getElementById('sn-h').textContent = fmt(h, 1) + 'h';
-  document.getElementById('sn-hi').textContent = fmt(hi, 1);
-  document.getElementById('sn-hf').textContent = fmt(hf, 1);
-  document.getElementById('sn-ht').textContent = fmt(hf, 1) + 'h';
-  document.getElementById('sn-et').textContent = etapa.value + ' — ' + etapa.text.split(' — ')[1];
-  document.getElementById('sn-sub').textContent = sub.value + ' — ' + sub.text.split(' — ')[1];
-  document.getElementById('sn-svc').textContent = svc.value + ' — ' + svc.text.split(' — ').slice(1).join(' — ');
-  document.getElementById('sn-unid').textContent = modal === 'hora' ? 'Hora' : 'Diária';
-  document.getElementById('sn-unit').textContent = 'R$' + taxa;
-  document.getElementById('sn-total').textContent = valStr;
-  document.getElementById('sn-obs').textContent = obs;
-  row.style.display = '';
-  row.style.background = 'rgba(34,197,94,0.06)';
-  document.getElementById('sif-ok-val').textContent = valStr;
+document.getElementById('sif-ok-val').textContent = valStr;
   document.getElementById('sif-ok-msg').style.display = 'block';
   showToast('Apontamento salvo no banco!', 'ok');
   setTimeout(() => {
     document.getElementById('sif-ok-msg').style.display = 'none';
-    row.style.background = '';
   }, 5000);
+
+  carregarRegistrosSIF();
+  carregarApresentacao();
+  carregarAuditoria();
 
   carregarRegistrosSIF();
 }
